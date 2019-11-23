@@ -1,8 +1,9 @@
 from PyQt5.QtWidgets import QMainWindow,QLabel,QApplication,QPushButton;
 from PyQt5.QtGui import QImage,QPalette,QBrush,QFont,QPainter
 from PyQt5.QtCore import QSize,Qt,QPointF
-from math import sin,cos,radians;
 from spaceShip import SpaceShip;
+
+
 import sys;
 
 
@@ -37,8 +38,8 @@ class theMainWindow(QMainWindow):
         qp.drawLine(self.spaceShip.points[0], self.spaceShip.points[1]);
         qp.drawLine(self.spaceShip.points[1], self.spaceShip.points[2]);
         qp.drawLine(self.spaceShip.points[2], self.spaceShip.points[3]);
-        qp.drawLine(self.spaceShip.points[3], self.spaceShip.points[4]);
-        qp.drawLine(self.spaceShip.points[5], self.spaceShip.points[0]);
+        qp.drawLine(self.spaceShip.points[3], self.spaceShip.points[0]);
+        qp.drawLine(self.spaceShip.points[2], self.spaceShip.points[0]);
 
     def startGame(self):
         self.mode = "PLAYING";
@@ -47,35 +48,18 @@ class theMainWindow(QMainWindow):
         palette = QPalette();
         palette.setBrush(QPalette.Window,QBrush(background));
         self.setPalette(palette);
+        self.repaint()
 
-        self.repaint();
 
-    def rotate_point(self,point, angle, center_point=(0, 0)):
-        """Rotates a point around center_point(origin by default)
-        Angle is in degrees.
-        Rotation is counter-clockwise
-        """
-        print(point);
-        angle_rad = radians(angle % 360)
 
-        # Shift the point so that center_point becomes the origin
-        new_point = (point.x() - center_point[0], point.y() - center_point[1])
-        new_point = (new_point[0] * cos(angle_rad) - new_point[1] * sin(angle_rad),
-                     new_point[0] * sin(angle_rad) + new_point[1] * cos(angle_rad))
-        # Reverse the shifting we have done
-        new_point = (new_point[0] + center_point[0], new_point[1] + center_point[1])
-
-        return new_point
-
-    def rotate_spaceship(self):
-        (x,y) = self.rotate_point()
 
     def keyPressEvent(self, e):
         if e.key() == Qt.Key_Space and self.mode == "INITIATING":
             self.startGame();
             self.label.hide();
         if e.key() == Qt.Key_Up and self.mode == "PLAYING":
-            self.spaceShip.move(self.spaceShip.x(),self.spaceShip.y() - 10);
+            self.spaceShip.move();
+            self.repaint();
         if (e.key() == Qt.Key_Left and self.mode == "PLAYING") or (e.key() == Qt.Key_Right and self.mode == "PLAYING"):
             i = 0;
             angle = 0;
@@ -85,9 +69,11 @@ class theMainWindow(QMainWindow):
                 angle = 10
 
             for point in self.spaceShip.points:
-                (x,y) = self.rotate_point(point,angle,(self.spaceShip.x,self.spaceShip.y))
+                (x,y) = self.spaceShip.rotate_point(point,angle,(self.spaceShip.x,self.spaceShip.y))
                 self.spaceShip.points[i] = QPointF(x,y);
                 i += 1;
+
+            self.spaceShip.vector =  self.spaceShip.rotate(self.spaceShip.vector,angle);
 
             self.repaint();
 
