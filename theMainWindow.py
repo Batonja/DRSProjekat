@@ -1,5 +1,5 @@
 from PyQt5.QtWidgets import QMainWindow,QLabel,QApplication,QPushButton;
-from PyQt5.QtGui import QImage,QPalette,QBrush,QFont,QPainter,QPen,QColor
+from PyQt5.QtGui import QImage,QPalette,QBrush,QFont,QPainter
 from PyQt5.QtCore import QSize,Qt,QPointF
 from math import sin,cos,radians;
 from spaceShip import SpaceShip;
@@ -27,22 +27,18 @@ class theMainWindow(QMainWindow):
         self.label.setFixedSize(750,100);
         self.label.setFont(QFont("Times new roman",25))
         self.label.setStyleSheet("color:white")
-        self.spaceShip = SpaceShip(350.0,350.0);
+        self.spaceShip = SpaceShip(350,350);
         self.show();
 
     def paintEvent(self, e):
         qp = QPainter();
         qp.begin(self);
-        qp.setBrush(QBrush(Qt.red, Qt.SolidPattern));
-        qp.setPen(QPen(QColor("red")))
+        qp.setBrush(QBrush(Qt.darkGreen));
         qp.drawLine(self.spaceShip.points[0], self.spaceShip.points[1]);
         qp.drawLine(self.spaceShip.points[1], self.spaceShip.points[2]);
         qp.drawLine(self.spaceShip.points[2], self.spaceShip.points[3]);
-        qp.drawLine(self.spaceShip.points[3], self.spaceShip.points[0]);
-        qp.drawLine(self.spaceShip.points[2], self.spaceShip.points[0])
-
-        qp.drawLine(QPointF(0,0),QPointF(self.spaceShip.x,self.spaceShip.y))
-
+        qp.drawLine(self.spaceShip.points[3], self.spaceShip.points[4]);
+        qp.drawLine(self.spaceShip.points[5], self.spaceShip.points[0]);
 
     def startGame(self):
         self.mode = "PLAYING";
@@ -59,22 +55,20 @@ class theMainWindow(QMainWindow):
         Angle is in degrees.
         Rotation is counter-clockwise
         """
-
-
+        print(point);
         angle_rad = radians(angle % 360)
 
         # Shift the point so that center_point becomes the origin
         new_point = (point.x() - center_point[0], point.y() - center_point[1])
-
         new_point = (new_point[0] * cos(angle_rad) - new_point[1] * sin(angle_rad),
                      new_point[0] * sin(angle_rad) + new_point[1] * cos(angle_rad))
-
         # Reverse the shifting we have done
         new_point = (new_point[0] + center_point[0], new_point[1] + center_point[1])
 
-
-
         return new_point
+
+    def rotate_spaceship(self):
+        (x,y) = self.rotate_point()
 
     def keyPressEvent(self, e):
         if e.key() == Qt.Key_Space and self.mode == "INITIATING":
