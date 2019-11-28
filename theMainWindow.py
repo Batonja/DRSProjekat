@@ -3,13 +3,13 @@ from PyQt5.QtGui import QImage,QPalette,QBrush,QFont,QPainter, QPixmap
 from PyQt5.QtCore import QSize,Qt,QPointF,QThread, pyqtSignal
 from math import sin,cos,radians;
 from spaceShip import SpaceShip;
-import sys;
 import sys, time;
 from asteroid import Asteroid
 from random import randrange, randint
-
+from moveRotate import MOVE_ROTATE;
 asteroids = []
 asteroidLabels = []
+
 
 class AsteroidsThread(QThread):
     signal = pyqtSignal()
@@ -86,10 +86,10 @@ class theMainWindow(QMainWindow):
             self.startGame();
             self.startAsteroids()
             self.label.hide();
-        if e.key() == Qt.Key_Up and self.mode == "PLAYING":
+        if e.key() == Qt.Key_Up and self.mode == "PLAYING" and e.isAutoRepeat():
             self.spaceShip.move();
             self.repaint();
-        if (e.key() == Qt.Key_Left and self.mode == "PLAYING") or (e.key() == Qt.Key_Right and self.mode == "PLAYING"):
+        if (e.key() == Qt.Key_Left and self.mode == "PLAYING") or (e.key() == Qt.Key_Right and self.mode == "PLAYING" ):
             i = 0;
             angle = 0;
             if(e.key() == Qt.Key_Left):
@@ -98,12 +98,13 @@ class theMainWindow(QMainWindow):
                 angle = 10
 
             for point in self.spaceShip.points:
-                (x,y) = self.spaceShip.rotate_point(point,angle,(self.spaceShip.x,self.spaceShip.y))
+                (x,y) = self.spaceShip.rotate_point(point,angle,MOVE_ROTATE.ROTATE,(self.spaceShip.x,self.spaceShip.y))
                 self.spaceShip.points[i] = QPointF(x,y);
                 i += 1;
-
-            self.spaceShip.vector =  self.spaceShip.rotate(self.spaceShip.vector,angle);
-
+            (vecX,vecY) = self.spaceShip.rotate(self.spaceShip.vector,angle)
+            self.spaceShip.vector.setX(vecX);
+            self.spaceShip.vector.setY(vecY)
+            print(self.spaceShip.vector)
             self.repaint();
 
     def startAsteroids(self):
@@ -150,8 +151,7 @@ class theMainWindow(QMainWindow):
 
             lab.setGeometry(posX, posY, 100, 100)
             asteroidLabels.append(lab)
-            print(posX)
-            print(posY)
+
         self.showAsteroids()
 
     def showAsteroids(self):
