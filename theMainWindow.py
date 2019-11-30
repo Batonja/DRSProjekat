@@ -1,12 +1,14 @@
-from PyQt5.QtWidgets import QMainWindow,QLabel,QApplication,QPushButton;
-from PyQt5.QtGui import QImage,QPalette,QBrush,QFont,QPainter, QPixmap
-from PyQt5.QtCore import QSize,Qt,QPointF,QThread, pyqtSignal
+from PyQt5.QtWidgets import QMainWindow,QLabel,QApplication,QLineEdit,QPushButton;
+from PyQt5.QtGui import QImage,QPalette,QBrush,QFont,QPainter, QPixmap,QPen
+from PyQt5.QtCore import QSize,Qt,QPointF,QThread, pyqtSignal,QRect
 from math import sin,cos,radians;
 from spaceShip import SpaceShip;
 import sys, time;
+from pynput.keyboard import Key, Controller
 from asteroid import Asteroid
 from random import randrange, randint
 from moveRotate import MOVE_ROTATE;
+import multiprocessing
 asteroids = []
 asteroidLabels = []
 
@@ -41,6 +43,7 @@ class theMainWindow(QMainWindow):
 
         self.initUI();
 
+
     def initUI(self):
         self.mode = "INITIATING";
         self.setGeometry(200,200,750,750);
@@ -50,27 +53,64 @@ class theMainWindow(QMainWindow):
         palette = QPalette();
         palette.setBrush(QPalette.Window,QBrush(background))
         self.setPalette(palette);
-        self.label = QLabel("Press space to play", self);
+        self.labelPlayers = QLabel("Players",self);
+        self.labelPlayers.move(320, 250)
+        self.labelPlayers.setFont(QFont("Times new roman",25));
+        self.labelPlayers.setFixedSize(300,200);
+        self.labelPlayers.setStyleSheet("color:white")
+        self.inputNumbers = QLineEdit(self)
+        self.inputNumbers.setGeometry(450,345,25,20);
+        self.rect = QRect(300,250,200,300);
+        self.startButton = QPushButton("Start",self);
+        self.startButton.setGeometry(305,490,190,50);
+        self.startButton.clicked.connect(self.setPlayers)
 
-        self.label.move(250, 650);
-        self.label.setFixedSize(750,100);
-        self.label.setFont(QFont("Times new roman",25))
-        self.label.setStyleSheet("color:white")
-        self.spaceShip = SpaceShip(350,350);
+
+
+        self.spaceShip = [SpaceShip(350,350),SpaceShip(200,350)]
+
+
+
         self.show();
+
+    def setPlayers(self):
+        self.startAsteroids()
+        self.numberOfPlayers = self.inputNumbers.text();
+        self.startGame();
+        self.rect.setHeight(0);
+        self.rect.setWidth(0);
+        self.startButton.hide();
+        self.labelPlayers.hide();
+        self.inputNumbers.focusWidget().clearFocus();
+        self.inputNumbers.hide();
+
+        self.repaint();
+
 
     def paintEvent(self, e):
         qp = QPainter();
         qp.begin(self);
-        qp.setBrush(QBrush(Qt.darkGreen));
-        qp.drawLine(self.spaceShip.points[0], self.spaceShip.points[1]);
-        qp.drawLine(self.spaceShip.points[1], self.spaceShip.points[2]);
-        qp.drawLine(self.spaceShip.points[2], self.spaceShip.points[3]);
-        qp.drawLine(self.spaceShip.points[3], self.spaceShip.points[0]);
-        qp.drawLine(self.spaceShip.points[2], self.spaceShip.points[0]);
+
+        qp.setPen(QPen(Qt.red));
+        qp.drawLine(self.spaceShip[0].points[0], self.spaceShip[0].points[1]);
+        qp.drawLine(self.spaceShip[0].points[1], self.spaceShip[0].points[2]);
+        qp.drawLine(self.spaceShip[0].points[2], self.spaceShip[0].points[3]);
+        qp.drawLine(self.spaceShip[0].points[3], self.spaceShip[0].points[0]);
+        qp.drawLine(self.spaceShip[0].points[2], self.spaceShip[0].points[0]);
+        if(self.spaceShip.__len__() == 2):
+            qp.setPen(QPen(Qt.green));
+            qp.drawLine(self.spaceShip[1].points[0], self.spaceShip[1].points[1]);
+            qp.drawLine(self.spaceShip[1].points[1], self.spaceShip[1].points[2]);
+            qp.drawLine(self.spaceShip[1].points[2], self.spaceShip[1].points[3]);
+            qp.drawLine(self.spaceShip[1].points[3], self.spaceShip[1].points[0]);
+            qp.drawLine(self.spaceShip[1].points[2], self.spaceShip[1].points[0]);
+        qp.setBrush(QBrush(Qt.black));
+        qp.drawRect(self.rect);
 
     def startGame(self):
         self.mode = "PLAYING";
+        if(self.numberOfPlayers == '1'):
+            del self.spaceShip[-1];
         background = QImage("./images/space.jpg")
         background = background.scaled(750,750);
         palette = QPalette();
@@ -79,34 +119,53 @@ class theMainWindow(QMainWindow):
         self.repaint()
 
 
-
-
-    def keyPressEvent(self, e):
-        if e.key() == Qt.Key_Space and self.mode == "INITIATING":
-            self.startGame();
-            self.startAsteroids()
-            self.label.hide();
-        if e.key() == Qt.Key_Up and self.mode == "PLAYING" and e.isAutoRepeat():
+    def moveIt(self):
+        for x in range(10):
             self.spaceShip.move();
             self.repaint();
+
+    def rotate_spaceShip(self,angle,spaceShip):
+        i = 0;
+        for point in spaceShip.points:
+            (x, y) = spaceShip.rotate_point(point, angle, MOVE_ROTATE.ROTATE,
+                                                    (spaceShip.x, spaceShip.y))
+            spaceShip.points[i] = QPointF(x, y);
+            i += 1;
+        (vecX, vecY) = spaceShip.rotate(spaceShip.vector, angle)
+        spaceShip.vector.setX(vecX);
+        spaceShip.vector.setY(vecY);
+
+        return spaceShip;
+
+    def keyPressEvent(self, e):
+        if e.key() == Qt.Key_Up and self.mode == "PLAYING" and e.isAutoRepeat():
+           # moving = multiprocessing.Process(target=self.moveIt(),args=()); preko threada
+           # moving.start()
+           self.spaceShip[0].move();
+           self.repaint();
+        if e.key() == Qt.Key_W and self.mode == "PLAYING" and e.isAutoRepeat():
+            # moving = multiprocessing.Process(target=self.moveIt(),args=()); preko threada
+            # moving.start()
+            self.spaceShip[1].move();
+            self.repaint();
         if (e.key() == Qt.Key_Left and self.mode == "PLAYING") or (e.key() == Qt.Key_Right and self.mode == "PLAYING" ):
-            i = 0;
             angle = 0;
             if(e.key() == Qt.Key_Left):
                 angle = -10;
             else:
                 angle = 10
+            self.spaceShip[0] = self.rotate_spaceShip(angle,spaceShip=self.spaceShip[0]);
 
-            for point in self.spaceShip.points:
-                (x,y) = self.spaceShip.rotate_point(point,angle,MOVE_ROTATE.ROTATE,(self.spaceShip.x,self.spaceShip.y))
-                self.spaceShip.points[i] = QPointF(x,y);
-                i += 1;
-            (vecX,vecY) = self.spaceShip.rotate(self.spaceShip.vector,angle)
-            self.spaceShip.vector.setX(vecX);
-            self.spaceShip.vector.setY(vecY)
-            print(self.spaceShip.vector)
             self.repaint();
+        if (e.key() == Qt.Key_A and self.mode == "PLAYING") or (e.key() == Qt.Key_D and self.mode == "PLAYING" ):
+            angle = 0;
+            if(e.key() == Qt.Key_A):
+                angle = -10;
+            else:
+                angle = 10
+            self.spaceShip[1] = self.rotate_spaceShip(angle,spaceShip=self.spaceShip[1]);
 
+            self.repaint();
     def startAsteroids(self):
         self.createAsteroids()
         self.thread = AsteroidsThread()

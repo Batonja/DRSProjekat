@@ -13,7 +13,7 @@ class SpaceShip(QWidget):
         self.height = 32.0;
         self.color = (255, 25, 255);
         self.vector = QVector2D(QPointF(0.0,-1.0));
-        self.velocity = 5;
+        self.velocity = 1;
         self.rotatedFor = 0;
 
         points = [
