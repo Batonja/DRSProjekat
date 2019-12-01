@@ -1,11 +1,11 @@
-from PyQt5.QtCore import QPointF,Qt
-from PyQt5.QtGui import QVector2D
+from PyQt5.QtCore import QPointF,QRectF,Qt
+from PyQt5.QtGui import QVector2D,QPainter,QPen
 from PyQt5.QtWidgets import QWidget
 from math import ceil,sin,cos,radians;
 from moveRotate import MOVE_ROTATE;
 
 class SpaceShip(QWidget):
-    def __init__(self,x,y):
+    def __init__(self,x,y,color):
         super().__init__()
         self.x = x;
         self.y = y;
@@ -15,7 +15,8 @@ class SpaceShip(QWidget):
         self.vector = QVector2D(QPointF(0.0,-1.0));
         self.velocity = 10;
         self.rotatedFor = 0;
-
+        self.color = color;
+        self.colorOfProjectile = Qt.transparent;
         points = [
             QPointF(self.x, self.y - (self.height / 2.0)),
             QPointF(self.x - ((self.width / 2.0)), self.y + (self.height / 2.0)),
@@ -23,7 +24,9 @@ class SpaceShip(QWidget):
             QPointF(self.x + (self.width / 2.0), self.y + (self.height / 2.0)),
 
         ]
+
         self.points = points;
+        self.projectile = QPointF(self.points[0]);
 
     def move(self):
        # print(self.x.__str__() + "+= " + self.vector.x().__str__() + "*" + self.velocity.__str__())
@@ -53,6 +56,9 @@ class SpaceShip(QWidget):
            self.points[i] = QPointF(x,y);
            i += 1;
        print("X: " + self.x.__str__() + "Y: " +  self.y.__str__());
+
+
+
     def rotate(self,point,angle):
         angle = radians(angle % 360)
         point = (point[0] * cos(angle) - point[1] * sin(angle),
@@ -72,6 +78,21 @@ class SpaceShip(QWidget):
 
         return new_point;
 
+
+    def moveProjectile(self):
+
+        while (self.projectile.x() < 750 and self.projectile.x() > 0) or (self.projectile.y() < 750 and self.projectile.y() > 0):
+            self.projectile.setX( self.projectile.x() + self.vector.x() * self.velocity);
+            self.projectile.setY( self.projectile.x() + self.vector.y() * self.velocity);
+
+
+
+    def shoot(self):
+        self.projectile = QPointF(self.points[0]);
+        self.colorOfProjectile = self.color;
+
+        self.moveProjectile();
+        self.repaint()
     def mojeKoordinate(self):
         print("Koordinata X: " + self.x.__str__());
         print("Koordinata Y: " + self.y.__str__());

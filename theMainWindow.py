@@ -67,7 +67,7 @@ class theMainWindow(QMainWindow):
 
 
 
-        self.spaceShip = [SpaceShip(350,350),SpaceShip(350,350)]
+        self.spaceShip = [SpaceShip(350,350,Qt.red),SpaceShip(350,350,Qt.green)]
 
 
 
@@ -92,19 +92,27 @@ class theMainWindow(QMainWindow):
         qp = QPainter();
         qp.begin(self);
 
-        qp.setPen(QPen(Qt.red));
+        qp.setPen(QPen(self.spaceShip[0].color));
         qp.drawLine(self.spaceShip[0].points[0], self.spaceShip[0].points[1]);
         qp.drawLine(self.spaceShip[0].points[1], self.spaceShip[0].points[2]);
         qp.drawLine(self.spaceShip[0].points[2], self.spaceShip[0].points[3]);
         qp.drawLine(self.spaceShip[0].points[3], self.spaceShip[0].points[0]);
         qp.drawLine(self.spaceShip[0].points[2], self.spaceShip[0].points[0]);
+
+        qp.setPen(QPen(self.spaceShip[0].colorOfProjectile))
+        qp.setBrush(QBrush(self.spaceShip[0].colorOfProjectile))
+        qp.drawEllipse(self.spaceShip[0].projectile,5,5);
+
         if(self.spaceShip.__len__() == 2):
-            qp.setPen(QPen(Qt.green));
+            qp.setPen(QPen(self.spaceShip[1].color));
             qp.drawLine(self.spaceShip[1].points[0], self.spaceShip[1].points[1]);
             qp.drawLine(self.spaceShip[1].points[1], self.spaceShip[1].points[2]);
             qp.drawLine(self.spaceShip[1].points[2], self.spaceShip[1].points[3]);
             qp.drawLine(self.spaceShip[1].points[3], self.spaceShip[1].points[0]);
             qp.drawLine(self.spaceShip[1].points[2], self.spaceShip[1].points[0]);
+            qp.setPen(QPen(self.spaceShip[1].colorOfProjectile))
+            qp.setBrush(QBrush(self.spaceShip[1].colorOfProjectile))
+            qp.drawEllipse(self.spaceShip[1].projectile, 5, 5);
         qp.setBrush(QBrush(Qt.black));
         qp.drawRect(self.rect);
 
@@ -168,7 +176,19 @@ class theMainWindow(QMainWindow):
             self.spaceShip[1] = self.rotate_spaceShip(angle,spaceShip=self.spaceShip[1]);
 
             self.repaint();
+        if(e.key() == Qt.Key_PageDown):
+            self.shoot(self.spaceShip[0])
+        if(e.key() == Qt.Key_Space and self.spaceShip.__len__() == 2):
+            self.shoot(self.spaceShip[1])
 
+    def shoot(self,ship):
+        ship.colorOfProjectile = ship.color;
+        ship.projectile = QPointF(ship.points[0]);
+
+        while ((ship.projectile.x() < 760 and ship.projectile.x() > -10) and(ship.projectile.y() < 760 and ship.projectile.y() > -10))  :
+            ship.projectile.setX(ship.projectile.x() + ship.vector.x() * ship.velocity/2);
+            ship.projectile.setY(ship.projectile.y() + ship.vector.y() * ship.velocity/2);
+            self.repaint();
 
     def startAsteroids(self):
         self.createAsteroids()
