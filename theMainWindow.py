@@ -67,24 +67,25 @@ class theMainWindow(QMainWindow):
 
 
 
-        self.spaceShip = [SpaceShip(350,350),SpaceShip(200,350)]
+        self.spaceShip = [SpaceShip(350,350),SpaceShip(350,350)]
 
 
 
         self.show();
 
     def setPlayers(self):
-        self.startAsteroids()
-        self.numberOfPlayers = self.inputNumbers.text();
-        self.startGame();
-        self.rect.setHeight(0);
-        self.rect.setWidth(0);
-        self.startButton.hide();
-        self.labelPlayers.hide();
-        self.inputNumbers.focusWidget().clearFocus();
-        self.inputNumbers.hide();
+        if(self.inputNumbers.text() == '1' or self.inputNumbers.text() == '2'):
+            self.startAsteroids()
+            self.numberOfPlayers = self.inputNumbers.text();
+            self.startGame();
+            self.rect.setHeight(0);
+            self.rect.setWidth(0);
+            self.startButton.hide();
+            self.labelPlayers.hide();
+            self.inputNumbers.focusWidget().clearFocus();
+            self.inputNumbers.hide();
 
-        self.repaint();
+            self.repaint();
 
 
     def paintEvent(self, e):
@@ -143,7 +144,7 @@ class theMainWindow(QMainWindow):
            # moving.start()
            self.spaceShip[0].move();
            self.repaint();
-        if e.key() == Qt.Key_W and self.mode == "PLAYING" and e.isAutoRepeat():
+        if e.key() == Qt.Key_W and self.mode == "PLAYING" and self.spaceShip.__len__() == 2:
             # moving = multiprocessing.Process(target=self.moveIt(),args=()); preko threada
             # moving.start()
             self.spaceShip[1].move();
@@ -154,10 +155,11 @@ class theMainWindow(QMainWindow):
                 angle = -10;
             else:
                 angle = 10
+
             self.spaceShip[0] = self.rotate_spaceShip(angle,spaceShip=self.spaceShip[0]);
 
             self.repaint();
-        if (e.key() == Qt.Key_A and self.mode == "PLAYING") or (e.key() == Qt.Key_D and self.mode == "PLAYING" ):
+        if ((e.key() == Qt.Key_A and self.mode == "PLAYING") or (e.key() == Qt.Key_D and self.mode == "PLAYING" )) and self.spaceShip.__len__() == 2:
             angle = 0;
             if(e.key() == Qt.Key_A):
                 angle = -10;
@@ -166,6 +168,8 @@ class theMainWindow(QMainWindow):
             self.spaceShip[1] = self.rotate_spaceShip(angle,spaceShip=self.spaceShip[1]);
 
             self.repaint();
+
+
     def startAsteroids(self):
         self.createAsteroids()
         self.thread = AsteroidsThread()

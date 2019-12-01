@@ -13,7 +13,7 @@ class SpaceShip(QWidget):
         self.height = 32.0;
         self.color = (255, 25, 255);
         self.vector = QVector2D(QPointF(0.0,-1.0));
-        self.velocity = 1;
+        self.velocity = 10;
         self.rotatedFor = 0;
 
         points = [
@@ -29,6 +29,14 @@ class SpaceShip(QWidget):
        # print(self.x.__str__() + "+= " + self.vector.x().__str__() + "*" + self.velocity.__str__())
        # print(self.y.__str__() + "+= " + self.vector.y().__str__() + "*" + self.velocity.__str__())
 
+       if(self.x > 750):
+           self.x = 0;
+       elif(self.x < 0):
+           self.x = 750;
+       if(self.y > 750):
+           self.y = 0;
+       elif(self.y < 0):
+           self.y = 750;
        self.x += self.vector.x() * self.velocity
        self.y += self.vector.y() * self.velocity
 
