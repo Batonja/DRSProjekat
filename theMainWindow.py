@@ -22,12 +22,13 @@ class AsteroidsThread(QThread):
             count += 1
             time.sleep(0.07)
             for a in asteroids:
-                if a.direction == 0:
-                    a.posX = a.posX + a.speed
-                    a.posY = a.posY + a.speed
-                else:
-                    a.posX = a.posX - a.speed
-                    a.posY = a.posY - a.speed
+                if a != 'DESTROYED':
+                    if a.direction == 0:
+                        a.posX = a.posX + a.speed
+                        a.posY = a.posY + a.speed
+                    else:
+                        a.posX = a.posX - a.speed
+                        a.posY = a.posY - a.speed
 
             self.signal.emit()
 
@@ -65,11 +66,11 @@ class theMainWindow(QMainWindow):
         self.startButton.setGeometry(305,490,190,50);
         self.startButton.clicked.connect(self.setPlayers)
 
-
+        button = QPushButton('Destory random asteroid', self)
+        button.move(100, 70)
+        button.clicked.connect(self.destoryRandomAsteroid)
 
         self.spaceShip = [SpaceShip(350,350,Qt.red),SpaceShip(350,350,Qt.green)]
-
-
 
         self.show();
 
@@ -198,28 +199,26 @@ class theMainWindow(QMainWindow):
 
     def update(self):
         for l in asteroidLabels:
-            l.hide()
+            if l != 'DESTROYED':
+                l.hide()
 
         for i in range(len(asteroids)):
-            # provera da li je asteroid izasao iz prozora
-            if asteroids[i].posX > self.frameGeometry().height():
-                asteroids[i].posX = 0
-            elif asteroids[i].posX <= 0:
-                asteroids[i].posX = 750
-            if asteroids[i].posY > self.frameGeometry().width():
-                asteroids[i].posY = 0
-            elif asteroids[i].posY <= 0:
-                asteroids[i].posY = 750
-            asteroidLabels[i].setGeometry(asteroids[i].posX, asteroids[i].posY, 100, 100)
-            asteroidLabels[i].show()
+            if asteroids[i] != 'DESTROYED':
+                if asteroids[i].posX > self.frameGeometry().height():
+                    asteroids[i].posX = 0
+                elif asteroids[i].posX <= 0:
+                    asteroids[i].posX = 750
+                if asteroids[i].posY > self.frameGeometry().width():
+                    asteroids[i].posY = 0
+                elif asteroids[i].posY <= 0:
+                    asteroids[i].posY = 750
+                asteroidLabels[i].setGeometry(asteroids[i].posX, asteroids[i].posY, 100, 100)
+                asteroidLabels[i].show()
 
     def createAsteroids(self):
         for a in range(self.asteroidCount):
             randomDirection = randint(0, 1)
-
             posX = randrange(1, 750)
-            posY = randrange(1, 750)
-
             posY = randrange(1, 750)
             size = randrange(1, 4)
             asteroid = Asteroid(size, posX, posY, 3, randomDirection)
@@ -239,7 +238,57 @@ class theMainWindow(QMainWindow):
 
     def showAsteroids(self):
         for l in asteroidLabels:
-            l.show()
+            if l != 'DESTROYED':
+                l.show()
+
+    def destroyAsteroids(self, asteroid):
+        asteroidIndex = asteroids.index(asteroid);
+
+        if asteroid.size == 1:
+            asteroids[asteroidIndex] = 'DESTROYED'
+            asteroidLabels[asteroidIndex].hide()
+            asteroidLabels[asteroidIndex] = 'DESTROYED'
+            print('Small asteroid has been destroyed')
+        elif asteroid.size == 2:
+            asteroids[asteroidIndex] = 'DESTROYED'
+            asteroidLabels[asteroidIndex].hide()
+            asteroidLabels[asteroidIndex] = 'DESTROYED'
+            print('Medium asteroid has been destroyed')
+        else:
+            # kreiraj nove asteroide
+            self.createSmallAsteroid(asteroid.posX, asteroid.posY, 0);
+            self.createSmallAsteroid(asteroid.posX, asteroid.posY, 1);
+
+            asteroids[asteroidIndex] = 'DESTROYED'
+            asteroidLabels[asteroidIndex].hide()
+            asteroidLabels[asteroidIndex] = 'DESTROYED'
+            print('Big asteroid has been destroyed')
+
+    def createSmallAsteroid(self, x, y, direction):
+        size = 1
+        newAsteroid = Asteroid(size, x, y, 3, direction)
+        asteroids.append(newAsteroid)
+        lab = QLabel(self)
+        lab.setPixmap(self.smallAsteroidPixMap)
+        lab.setGeometry(x, y, 100, 100)
+        asteroidLabels.append(lab)
+        self.showAsteroids()
+
+    def aliveAsteroidsCount(self):
+        count = 0
+        for a in asteroids:
+            if a != 'DESTROYED':
+                count += 1
+        return count
+
+    def destoryRandomAsteroid(self):
+        asteroid = ''
+        while True:
+            randomAsteroidIndex = randint(0, len(asteroids))
+            asteroid = asteroids[randomAsteroidIndex]
+            if asteroid != 'DESTROYED':
+                self.destroyAsteroids(asteroid)
+                break
 
 if __name__ == "__main__":
     app = QApplication(sys.argv);
