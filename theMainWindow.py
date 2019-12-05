@@ -284,7 +284,7 @@ class theMainWindow(QMainWindow):
     def destoryRandomAsteroid(self):
         asteroid = ''
         while True:
-            randomAsteroidIndex = randint(0, len(asteroids))
+            randomAsteroidIndex = randint(0, len(asteroids) - 1)
             asteroid = asteroids[randomAsteroidIndex]
             if asteroid != 'DESTROYED':
                 self.destroyAsteroids(asteroid)
