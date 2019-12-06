@@ -53,6 +53,12 @@ class theMainWindow(QMainWindow):
         background = QImage("./images/start_page.webp")
         background = background.scaled(QSize(750,750));
 
+        self.scoreLabel = QLabel('Score: 0', self);
+        self.scoreLabel.setGeometry(10, 10, 200, 50);
+        self.scoreLabel.setStyleSheet("font: 20pt Times new roman; color: green");
+        self.scoreLabel.hide()
+        self.points = 0
+
         palette = QPalette();
         palette.setBrush(QPalette.Window,QBrush(background))
         self.setPalette(palette);
@@ -85,8 +91,9 @@ class theMainWindow(QMainWindow):
             self.labelPlayers.hide();
             self.inputNumbers.focusWidget().clearFocus();
             self.inputNumbers.hide();
-
+            self.scoreLabel.show()
             self.repaint();
+
 
 
     def paintEvent(self, e):
@@ -126,6 +133,7 @@ class theMainWindow(QMainWindow):
         palette = QPalette();
         palette.setBrush(QPalette.Window,QBrush(background));
         self.setPalette(palette);
+
         self.repaint()
 
 
@@ -223,6 +231,8 @@ class theMainWindow(QMainWindow):
         self.thread.signal.connect(self.update)
         self.thread.start()
 
+
+
     def update(self):
         for l in asteroidLabels:
             if l != 'DESTROYED':
@@ -267,8 +277,10 @@ class theMainWindow(QMainWindow):
             if l != 'DESTROYED':
                 l.show()
 
-    def destroyAsteroids(self, asteroid):
+    def destroyAsteroid(self, asteroid):
         asteroidIndex = asteroids.index(asteroid);
+        self.points += asteroid.points
+        self.scoreLabel.setText('Score: ' + str(self.points))
 
         if asteroid.size == 1:
             asteroids[asteroidIndex] = 'DESTROYED'
@@ -310,10 +322,10 @@ class theMainWindow(QMainWindow):
     def destoryRandomAsteroid(self):
         asteroid = ''
         while True:
-            randomAsteroidIndex = randint(0, len(asteroids))
+            randomAsteroidIndex = randint(0, len(asteroids) - 1)
             asteroid = asteroids[randomAsteroidIndex]
             if asteroid != 'DESTROYED':
-                self.destroyAsteroids(asteroid)
+                self.destroyAsteroid(asteroid)
                 break
 
 if __name__ == "__main__":
