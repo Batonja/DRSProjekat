@@ -3,6 +3,11 @@ class Asteroid:
         self.size = size
         self.posX = posX
         self.posY = posY
+        self.posMinX = 0;
+        self.posMaxX = 0
+        self.posMinY = 0
+        self.posMaxY = 0
+        self.asignMinAndMaxToAsteroid();
         self.speed = speed
         self.points = 0
         #0 - UP, 1 - DOWN
@@ -13,4 +18,11 @@ class Asteroid:
             self.points = 20
         else:
             self.points = 10
+
+
+    def asignMinAndMaxToAsteroid(self):
+        self.posMinX = self.posX - 10;
+        self.posMaxX = self.posX + 10;
+        self.posMinY = self.posY - 10;
+        self.posMaxY = self.posY + 10;
 

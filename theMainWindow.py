@@ -26,9 +26,11 @@ class AsteroidsThread(QThread):
                     if a.direction == 0:
                         a.posX = a.posX + a.speed
                         a.posY = a.posY + a.speed
+
                     else:
                         a.posX = a.posX - a.speed
                         a.posY = a.posY - a.speed
+                    a.asignMinAndMaxToAsteroid();
 
             self.signal.emit()
 
@@ -66,9 +68,7 @@ class theMainWindow(QMainWindow):
         self.startButton.setGeometry(305,490,190,50);
         self.startButton.clicked.connect(self.setPlayers)
 
-        button = QPushButton('Destory random asteroid', self)
-        button.move(100, 70)
-        button.clicked.connect(self.destoryRandomAsteroid)
+
 
         self.spaceShip = [SpaceShip(350,350,Qt.red),SpaceShip(350,350,Qt.green)]
 
@@ -147,6 +147,9 @@ class theMainWindow(QMainWindow):
 
         return spaceShip;
 
+
+
+
     def keyPressEvent(self, e):
         if e.key() == Qt.Key_Up and self.mode == "PLAYING" and e.isAutoRepeat():
            # moving = multiprocessing.Process(target=self.moveIt(),args=()); preko threada
@@ -178,18 +181,41 @@ class theMainWindow(QMainWindow):
 
             self.repaint();
         if(e.key() == Qt.Key_PageDown):
-            self.shoot(self.spaceShip[0])
+            self.spaceShip[0] = self.shoot(self.spaceShip[0])
         if(e.key() == Qt.Key_Space and self.spaceShip.__len__() == 2):
-            self.shoot(self.spaceShip[1])
+            self.spaceShip[1] = self.shoot(self.spaceShip[1])
 
     def shoot(self,ship):
+
         ship.colorOfProjectile = ship.color;
         ship.projectile = QPointF(ship.points[0]);
 
         while ((ship.projectile.x() < 760 and ship.projectile.x() > -10) and(ship.projectile.y() < 760 and ship.projectile.y() > -10))  :
             ship.projectile.setX(ship.projectile.x() + ship.vector.x() * ship.velocity/2);
             ship.projectile.setY(ship.projectile.y() + ship.vector.y() * ship.velocity/2);
+            for i in range (len(asteroids)):
+                print(i);
+                print("===")
+                try:
+                    print(asteroids[i].posX)
+                    print(asteroids[i].posY)
+                except:
+                    print("asteroidi went wrong");
+                try:
+                    if( (ship.projectile.x() >= asteroids[i].posMinX and ship.projectile.x() <= asteroids[i].posMaxX) and (ship.projectile.y() >= asteroids[i].posMinY and ship.projectile.y() <= asteroids[i].posMaxY)):
+                        self.destroyAsteroids(asteroids[i])
+                        print(ship.projectile.x().__str__())
+                        print(ship.projectile.y().__str__())
+                        ship.reloadProjectile();
+                        self.repaint()
+                        return ship;
+                except:
+                    c = 3;
+
+
             self.repaint();
+        ship.reloadProjectile()
+        return ship;
 
     def startAsteroids(self):
         self.createAsteroids()

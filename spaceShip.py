@@ -1,10 +1,10 @@
-from PyQt5.QtCore import QPointF,QRectF,Qt
+from PyQt5.QtCore import QPointF,QRectF,Qt,QThread
 from PyQt5.QtGui import QVector2D,QPainter,QPen
 from PyQt5.QtWidgets import QWidget
 from math import ceil,sin,cos,radians;
 from moveRotate import MOVE_ROTATE;
 
-class SpaceShip(QWidget):
+class SpaceShip(QThread):
     def __init__(self,x,y,color):
         super().__init__()
         self.x = x;
@@ -26,8 +26,11 @@ class SpaceShip(QWidget):
         ]
 
         self.points = points;
+        self.projectile = 0;
+        self.reloadProjectile();
+    def reloadProjectile(self):
         self.projectile = QPointF(self.points[0]);
-
+        self.colorOfProjectile = Qt.transparent;
     def move(self):
        # print(self.x.__str__() + "+= " + self.vector.x().__str__() + "*" + self.velocity.__str__())
        # print(self.y.__str__() + "+= " + self.vector.y().__str__() + "*" + self.velocity.__str__())
@@ -79,20 +82,9 @@ class SpaceShip(QWidget):
         return new_point;
 
 
-    def moveProjectile(self):
-
-        while (self.projectile.x() < 750 and self.projectile.x() > 0) or (self.projectile.y() < 750 and self.projectile.y() > 0):
-            self.projectile.setX( self.projectile.x() + self.vector.x() * self.velocity);
-            self.projectile.setY( self.projectile.x() + self.vector.y() * self.velocity);
 
 
 
-    def shoot(self):
-        self.projectile = QPointF(self.points[0]);
-        self.colorOfProjectile = self.color;
-
-        self.moveProjectile();
-        self.repaint()
     def mojeKoordinate(self):
         print("Koordinata X: " + self.x.__str__());
         print("Koordinata Y: " + self.y.__str__());
