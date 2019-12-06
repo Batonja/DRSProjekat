@@ -202,25 +202,13 @@ class theMainWindow(QMainWindow):
             ship.projectile.setX(ship.projectile.x() + ship.vector.x() * ship.velocity/2);
             ship.projectile.setY(ship.projectile.y() + ship.vector.y() * ship.velocity/2);
             for i in range (len(asteroids)):
-                print(i);
-                print("===")
-                try:
-                    print(asteroids[i].posX)
-                    print(asteroids[i].posY)
-                except:
-                    print("asteroidi went wrong");
-                try:
-                    if( (ship.projectile.x() >= asteroids[i].posMinX and ship.projectile.x() <= asteroids[i].posMaxX) and (ship.projectile.y() >= asteroids[i].posMinY and ship.projectile.y() <= asteroids[i].posMaxY)):
-                        self.destroyAsteroids(asteroids[i])
-                        print(ship.projectile.x().__str__())
-                        print(ship.projectile.y().__str__())
-                        ship.reloadProjectile();
-                        self.repaint()
-                        return ship;
-                except:
-                    c = 3;
-
-
+                if( asteroids[i] != 'DESTROYED' and (ship.projectile.x() >= asteroids[i].posMinX and ship.projectile.x() <= asteroids[i].posMaxX) and (ship.projectile.y() >= asteroids[i].posMinY and ship.projectile.y() <= asteroids[i].posMaxY)):
+                    self.destroyAsteroid(asteroids[i])
+                    print(ship.projectile.x().__str__())
+                    print(ship.projectile.y().__str__())
+                    ship.reloadProjectile();
+                    self.repaint()
+                    return ship;
             self.repaint();
         ship.reloadProjectile()
         return ship;
