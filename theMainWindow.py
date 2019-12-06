@@ -12,7 +12,6 @@ import multiprocessing
 asteroids = []
 asteroidLabels = []
 
-
 class AsteroidsThread(QThread):
     signal = pyqtSignal()
 
@@ -276,26 +275,30 @@ class theMainWindow(QMainWindow):
             asteroidLabels[asteroidIndex] = 'DESTROYED'
             print('Small asteroid has been destroyed')
         elif asteroid.size == 2:
+            self.createSmallAsteroid(asteroid.posX, asteroid.posY, 0, 1);
+            self.createSmallAsteroid(asteroid.posX, asteroid.posY, 1, 1);
             asteroids[asteroidIndex] = 'DESTROYED'
             asteroidLabels[asteroidIndex].hide()
             asteroidLabels[asteroidIndex] = 'DESTROYED'
             print('Medium asteroid has been destroyed')
         else:
             # kreiraj nove asteroide
-            self.createSmallAsteroid(asteroid.posX, asteroid.posY, 0);
-            self.createSmallAsteroid(asteroid.posX, asteroid.posY, 1);
+            self.createSmallAsteroid(asteroid.posX, asteroid.posY, 0, 2);
+            self.createSmallAsteroid(asteroid.posX, asteroid.posY, 1, 2);
 
             asteroids[asteroidIndex] = 'DESTROYED'
             asteroidLabels[asteroidIndex].hide()
             asteroidLabels[asteroidIndex] = 'DESTROYED'
             print('Big asteroid has been destroyed')
 
-    def createSmallAsteroid(self, x, y, direction):
-        size = 1
+    def createSmallAsteroid(self, x, y, direction, size):
         newAsteroid = Asteroid(size, x, y, 3, direction)
         asteroids.append(newAsteroid)
         lab = QLabel(self)
-        lab.setPixmap(self.smallAsteroidPixMap)
+        if size == 1:
+            lab.setPixmap(self.smallAsteroidPixMap)
+        else:
+            lab.setPixmap(self.mediumAsteroidPixMap)
         lab.setGeometry(x, y, 100, 100)
         asteroidLabels.append(lab)
         self.showAsteroids()
