@@ -16,11 +16,11 @@ class Asteroid:
         #0 - UP, 1 - DOWN
         self.direction = direction
         if size == 1:
-            self.points = 10
+            self.points = 200
         elif size == 2:
-            self.points = 20
+            self.points = 100
         else:
-            self.points = 10
+            self.points = 50
 
     def calculateMyMiddle(self):
         if(self.whatSizeAmI == 'SMALL'):

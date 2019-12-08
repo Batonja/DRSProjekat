@@ -14,10 +14,10 @@ asteroidLabels = []
 smallAsteroidSize = 40;
 mediumAsteroidSize = 60;
 bigAsteroidSize = 80;
+goldAsteroidTimer = 10
 
 class AsteroidsThread(QThread):
     signal = pyqtSignal()
-
 
     def run(self):
         count = 0
@@ -36,7 +36,16 @@ class AsteroidsThread(QThread):
                     a.calculateMyMiddle();
                     a.asignMinAndMaxToAsteroid();
 
+            self.signal.emit()
 
+class BonusAsteroidThread(QThread):
+    signal = pyqtSignal()
+
+    def run(self):
+        count = 0
+        while True:
+            count += 1
+            time.sleep(goldAsteroidTimer)
             self.signal.emit()
 
 green = (0,70,0);
@@ -47,7 +56,8 @@ class theMainWindow(QMainWindow):
 
         self.smallAsteroidPixMap = QPixmap('./images/asteroid1.png').scaled(smallAsteroidSize, smallAsteroidSize,Qt.IgnoreAspectRatio)
         self.mediumAsteroidPixMap = QPixmap('./images/asteroid1.png').scaled(mediumAsteroidSize, mediumAsteroidSize,Qt.IgnoreAspectRatio)
-        self.bigAsteroidPixMap = QPixmap('./images/asteroid1.png').scaled(bigAsteroidSize, bigAsteroidSize,Qt.IgnoreAspectRatio)
+        self.bigAsteroidPixMap = QPixmap('./images/asteroid1.png').scaled(bigAsteroidSize, bigAsteroidSize, Qt.IgnoreAspectRatio)
+        self.goldAsteroidPixmap = QPixmap('./images/gold_asteroid.png').scaled(bigAsteroidSize, bigAsteroidSize, Qt.IgnoreAspectRatio)
 
         self.asteroidCount = 20
 
@@ -64,6 +74,7 @@ class theMainWindow(QMainWindow):
         self.scoreLabel.setGeometry(10, 10, 200, 50);
         self.scoreLabel.setStyleSheet("font: 20pt Times new roman; color: green");
         self.scoreLabel.hide()
+
         self.points = 0
 
         palette = QPalette();
@@ -81,15 +92,39 @@ class theMainWindow(QMainWindow):
         self.startButton.setGeometry(305,490,190,50);
         self.startButton.clicked.connect(self.setPlayers)
 
-
-
         self.spaceShip = [SpaceShip(350,350,Qt.red),SpaceShip(350,350,Qt.green)]
 
         self.show();
 
+    def createBonusAsteroid(self):
+        self.testLabel = QLabel('TESTLABEL', self);
+        self.testLabel.setGeometry(10, 70, 200, 50);
+        self.testLabel.setStyleSheet("font: 20pt Times new roman; color: green");
+        self.testLabel.show()
+
+        randomDirection = randint(0, 1)
+        posX = randrange(1, 750)
+        posY = randrange(1, 750)
+
+        x = 200
+        y = 200
+        goldAsteroid = Asteroid(3, posX, posY, 3, randomDirection)
+        goldAsteroid.points = 300
+        golAsteroidLabel = QLabel(self)
+        golAsteroidLabel.setPixmap(self.goldAsteroidPixmap)
+        goldAsteroid.whatSizeAmI = 'BIG'
+        golAsteroidLabel.setGeometry(posX, posY, 100, 100)
+
+        asteroids.append(goldAsteroid)
+        asteroidLabels.append(golAsteroidLabel)
+
+        self.showAsteroids()
+
+
     def setPlayers(self):
         if(self.inputNumbers.text() == '1' or self.inputNumbers.text() == '2'):
             self.startAsteroids()
+            self.startBonus()
             self.numberOfPlayers = self.inputNumbers.text();
             self.startGame();
             self.rect.setHeight(0);
@@ -166,9 +201,6 @@ class theMainWindow(QMainWindow):
 
         return spaceShip;
 
-
-
-
     def keyPressEvent(self, e):
 
         if e.key() == Qt.Key_Up and self.mode == "PLAYING" and e.isAutoRepeat():
@@ -230,6 +262,10 @@ class theMainWindow(QMainWindow):
         self.thread.signal.connect(self.update)
         self.thread.start()
 
+    def startBonus(self):
+        self.bonusThread = BonusAsteroidThread()
+        self.bonusThread.signal.connect(self.createBonusAsteroid)
+        self.bonusThread.start()
 
 
     def update(self):
@@ -273,9 +309,6 @@ class theMainWindow(QMainWindow):
             else:
                 lab.setPixmap(self.bigAsteroidPixMap)
                 asteroid.whatSizeAmI = 'BIG';
-
-
-
 
             lab.setGeometry(asteroid.posX,asteroid.posY,100,100);
             asteroids.append(asteroid)
