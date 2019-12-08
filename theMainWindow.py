@@ -1,6 +1,6 @@
 from PyQt5.QtWidgets import QMainWindow,QLabel,QApplication,QLineEdit,QPushButton;
 from PyQt5.QtGui import QImage,QPalette,QBrush,QFont,QPainter, QPixmap,QPen
-from PyQt5.QtCore import QSize,Qt,QPointF,QThread, pyqtSignal,QRect
+from PyQt5.QtCore import QSize,Qt,QPointF,QThread, pyqtSignal,QRect,QEvent
 from math import sin,cos,radians;
 from spaceShip import SpaceShip;
 import sys, time;
@@ -11,10 +11,13 @@ from moveRotate import MOVE_ROTATE;
 import multiprocessing
 asteroids = []
 asteroidLabels = []
-
+smallAsteroidSize = 40;
+mediumAsteroidSize = 60;
+bigAsteroidSize = 80;
 
 class AsteroidsThread(QThread):
     signal = pyqtSignal()
+
 
     def run(self):
         count = 0
@@ -30,18 +33,22 @@ class AsteroidsThread(QThread):
                     else:
                         a.posX = a.posX - a.speed
                         a.posY = a.posY - a.speed
+                    a.calculateMyMiddle();
                     a.asignMinAndMaxToAsteroid();
+
 
             self.signal.emit()
 
 green = (0,70,0);
 class theMainWindow(QMainWindow):
+    keyPressed = pyqtSignal(QEvent)
     def __init__(self):
         super().__init__();
 
-        self.smallAsteroidPixMap = QPixmap('./images/asteroid1.png').scaled(40, 40)
-        self.mediumAsteroidPixMap = QPixmap('./images/asteroid1.png').scaled(60, 60)
-        self.bigAsteroidPixMap = QPixmap('./images/asteroid1.png').scaled(80, 80)
+        self.smallAsteroidPixMap = QPixmap('./images/asteroid1.png').scaled(smallAsteroidSize, smallAsteroidSize,Qt.IgnoreAspectRatio)
+        self.mediumAsteroidPixMap = QPixmap('./images/asteroid1.png').scaled(mediumAsteroidSize, mediumAsteroidSize,Qt.IgnoreAspectRatio)
+        self.bigAsteroidPixMap = QPixmap('./images/asteroid1.png').scaled(bigAsteroidSize, bigAsteroidSize,Qt.IgnoreAspectRatio)
+
         self.asteroidCount = 20
 
         self.initUI();
@@ -124,6 +131,10 @@ class theMainWindow(QMainWindow):
         qp.setBrush(QBrush(Qt.black));
         qp.drawRect(self.rect);
 
+        for asteroid in asteroids:
+            if(asteroid != 'DESTROYED'):
+                qp.drawRect(asteroid.theMiddleX,asteroid.theMiddleY,5,5);
+
     def startGame(self):
         self.mode = "PLAYING";
         if(self.numberOfPlayers == '1'):
@@ -159,14 +170,16 @@ class theMainWindow(QMainWindow):
 
 
     def keyPressEvent(self, e):
+
         if e.key() == Qt.Key_Up and self.mode == "PLAYING" and e.isAutoRepeat():
-           # moving = multiprocessing.Process(target=self.moveIt(),args=()); preko threada
-           # moving.start()
+           #moving = multiprocessing.Process(target=self.spaceShip[0].move(),args=());
+           #moving.start()
            self.spaceShip[0].move();
            self.repaint();
         if e.key() == Qt.Key_W and self.mode == "PLAYING" and self.spaceShip.__len__() == 2:
-            # moving = multiprocessing.Process(target=self.moveIt(),args=()); preko threada
-            # moving.start()
+            #moving = multiprocessing.Process(target=self.spaceShip[0].move(), args=());
+            #moving.start()
+
             self.spaceShip[1].move();
             self.repaint();
         if (e.key() == Qt.Key_Left and self.mode == "PLAYING") or (e.key() == Qt.Key_Right and self.mode == "PLAYING" ):
@@ -199,13 +212,11 @@ class theMainWindow(QMainWindow):
         ship.projectile = QPointF(ship.points[0]);
 
         while ((ship.projectile.x() < 760 and ship.projectile.x() > -10) and(ship.projectile.y() < 760 and ship.projectile.y() > -10))  :
-            ship.projectile.setX(ship.projectile.x() + ship.vector.x() * ship.velocity/2);
-            ship.projectile.setY(ship.projectile.y() + ship.vector.y() * ship.velocity/2);
+            ship.projectile.setX(ship.projectile.x() + ship.vector.x() * ship.velocity/3);
+            ship.projectile.setY(ship.projectile.y() + ship.vector.y() * ship.velocity/3);
             for i in range (len(asteroids)):
-                if( asteroids[i] != 'DESTROYED' and (ship.projectile.x() >= asteroids[i].posMinX and ship.projectile.x() <= asteroids[i].posMaxX) and (ship.projectile.y() >= asteroids[i].posMinY and ship.projectile.y() <= asteroids[i].posMaxY)):
+                if( asteroids[i] != 'DESTROYED' and (ship.projectile.x() >= asteroids[i].theMiddleX  - (asteroids[i].posMaxX - asteroids[i].posMinX)  and ship.projectile.x() <= asteroids[i].theMiddleX + (asteroids[i].posMaxX - asteroids[i].posMinX)) and (ship.projectile.y() >= asteroids[i].theMiddleY - (asteroids[i].posMaxY - asteroids[i].posMinY) and ship.projectile.y() <= asteroids[i].posMaxY + (asteroids[i].posMaxY - asteroids[i].posMinY))):
                     self.destroyAsteroid(asteroids[i])
-                    print(ship.projectile.x().__str__())
-                    print(ship.projectile.y().__str__())
                     ship.reloadProjectile();
                     self.repaint()
                     return ship;
@@ -246,16 +257,28 @@ class theMainWindow(QMainWindow):
             posY = randrange(1, 750)
             size = randrange(1, 4)
             asteroid = Asteroid(size, posX, posY, 3, randomDirection)
-            asteroids.append(asteroid)
+
             lab = QLabel(self)
+
             if size == 1:
                 lab.setPixmap(self.smallAsteroidPixMap)
+                asteroid.whatSizeAmI = 'SMALL';
+
+
             elif size == 2:
                 lab.setPixmap(self.mediumAsteroidPixMap)
+                asteroid.whatSizeAmI = 'MEDIUM';
+
+
             else:
                 lab.setPixmap(self.bigAsteroidPixMap)
+                asteroid.whatSizeAmI = 'BIG';
 
-            lab.setGeometry(posX, posY, 100, 100)
+
+
+
+            lab.setGeometry(asteroid.posX,asteroid.posY,100,100);
+            asteroids.append(asteroid)
             asteroidLabels.append(lab)
 
         self.showAsteroids()
@@ -293,6 +316,7 @@ class theMainWindow(QMainWindow):
     def createSmallAsteroid(self, x, y, direction):
         size = 1
         newAsteroid = Asteroid(size, x, y, 3, direction)
+        newAsteroid.whatSizeAmI = 'SMALL';
         asteroids.append(newAsteroid)
         lab = QLabel(self)
         lab.setPixmap(self.smallAsteroidPixMap)

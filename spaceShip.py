@@ -31,6 +31,12 @@ class SpaceShip(QThread):
     def reloadProjectile(self):
         self.projectile = QPointF(self.points[0]);
         self.colorOfProjectile = Qt.transparent;
+
+    def keyPressEvent(self,e):
+        if e.key() == Qt.Key_F:
+            print("F");
+        e.accept();
+
     def move(self):
        # print(self.x.__str__() + "+= " + self.vector.x().__str__() + "*" + self.velocity.__str__())
        # print(self.y.__str__() + "+= " + self.vector.y().__str__() + "*" + self.velocity.__str__())
@@ -54,11 +60,15 @@ class SpaceShip(QThread):
         ]
 
        i = 0;
+
+
        for point in self.points:
            (x,y) = self.rotate_point(point,self.rotatedFor,MOVE_ROTATE.MOVE,(self.x,self.y));
            self.points[i] = QPointF(x,y);
            i += 1;
        print("X: " + self.x.__str__() + "Y: " +  self.y.__str__());
+
+
 
 
 
