@@ -15,7 +15,9 @@ class SpaceShip(QThread):
         self.vector = QVector2D(QPointF(0.0,-1.0));
         self.velocity = 10;
         self.rotatedFor = 0;
+        self.lives = 3;
         self.color = color;
+        self.isDead = False;
         self.colorOfProjectile = Qt.transparent;
         points = [
             QPointF(self.x, self.y - (self.height / 2.0)),
@@ -31,6 +33,18 @@ class SpaceShip(QThread):
     def reloadProjectile(self):
         self.projectile = QPointF(self.points[0]);
         self.colorOfProjectile = Qt.transparent;
+
+    def die(self):
+        self.x = 350;
+        self.y = 350;
+        self.lives -= 1;
+        self.points = [
+            QPointF(self.x, self.y - (self.height / 2.0)),
+            QPointF(self.x - ((self.width / 2.0)), self.y + (self.height / 2.0)),
+            QPointF(self.x, self.y + ((self.height / 4.0))),
+            QPointF(self.x + (self.width / 2.0), self.y + (self.height / 2.0)),
+
+        ]
 
     def keyPressEvent(self,e):
         if e.key() == Qt.Key_F:

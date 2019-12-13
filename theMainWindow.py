@@ -1,6 +1,7 @@
-from PyQt5.QtWidgets import QMainWindow,QLabel,QApplication,QLineEdit,QPushButton;
+from PyQt5.QtWidgets import QMainWindow,QLabel,QApplication,QLineEdit,QPushButton,QVBoxLayout,QHBoxLayout,QWidget
 from PyQt5.QtGui import QImage,QPalette,QBrush,QFont,QPainter, QPixmap,QPen
 from PyQt5.QtCore import QSize,Qt,QPointF,QThread, pyqtSignal,QRect,QEvent
+from threading import Thread
 from math import sin,cos,radians;
 from spaceShip import SpaceShip;
 import sys, time;
@@ -15,6 +16,8 @@ smallAsteroidSize = 40;
 mediumAsteroidSize = 60;
 bigAsteroidSize = 80;
 goldAsteroidTimer = 10
+spaceShip = [SpaceShip(350,350,Qt.red),SpaceShip(350,350,Qt.green),SpaceShip(350,350,Qt.yellow),SpaceShip(350,350,Qt.magenta)]
+
 
 class AsteroidsThread(QThread):
     signal = pyqtSignal()
@@ -22,6 +25,7 @@ class AsteroidsThread(QThread):
     def run(self):
         count = 0
         while True:
+
             count += 1
             time.sleep(0.07)
             for a in asteroids:
@@ -35,6 +39,7 @@ class AsteroidsThread(QThread):
                         a.posY = a.posY - a.speed
                     a.calculateMyMiddle();
                     a.asignMinAndMaxToAsteroid();
+
 
             self.signal.emit()
 
@@ -74,7 +79,7 @@ class theMainWindow(QMainWindow):
         self.scoreLabel.setGeometry(10, 10, 200, 50);
         self.scoreLabel.setStyleSheet("font: 20pt Times new roman; color: green");
         self.scoreLabel.hide()
-
+        self.numberOfPlayers = 0;
         self.points = 0
 
         palette = QPalette();
@@ -92,7 +97,21 @@ class theMainWindow(QMainWindow):
         self.startButton.setGeometry(305,490,190,50);
         self.startButton.clicked.connect(self.setPlayers)
 
-        self.spaceShip = [SpaceShip(350,350,Qt.red),SpaceShip(350,350,Qt.green)]
+
+        self.livesLabel = [QLabel("Player 1: ", self), QLabel("Player 2: ", self), QLabel("Player 3: ", self),
+                           QLabel("Player 4: ", self)];
+        i = 0;
+        colors = ['red','green','yellow','magenta'];
+        colorNum = 0;
+        for label in self.livesLabel:
+            label.setGeometry(580, 10 + i, 200, 50);
+            label.setStyleSheet("font: 20pt Times new roman; color:" + colors[colorNum]);
+            colorNum += 1;
+            i += 30;
+            label.hide();
+
+        self.lifeBox = [];
+
 
         self.show();
 
@@ -120,12 +139,40 @@ class theMainWindow(QMainWindow):
 
         self.showAsteroids()
 
+    def showAllLives(self):
+        i = 1
+        pixmaps = [QPixmap("./images/lives/redLife.png").scaled(20, 20),
+                   QPixmap("./images/lives/greenLife.png").scaled(20, 20),
+                   QPixmap("./images/lives/yellowLife.png").scaled(20, 20),
+                   QPixmap("./images/lives/magentaLife.png").scaled(20, 20)]
+
+        if(self.lifeBox.__len__() > 0):
+            for box in self.lifeBox:
+                box.hide();
+
+
+        for num in range(self.numberOfPlayers):
+            self.livesLabel[num].setText("Player " + i.__str__() + ": ");
+            for j in range(spaceShip[i - 1].lives):
+                self.lifeBox[j + (num*3)].setPixmap(pixmaps[i - 1])
+                self.lifeBox[j + (num*3)].setGeometry(680 + (j * 20), 25 + (i - 1) * 30, 20, 20);
+                self.lifeBox[j + (num*3)].show();
+
+            i += 1;
+
+
+            if self.livesLabel[num].isHidden():
+                self.livesLabel[num].show()
+
+
+
 
     def setPlayers(self):
-        if(self.inputNumbers.text() == '1' or self.inputNumbers.text() == '2'):
+        if(self.inputNumbers.text() == '1' or self.inputNumbers.text() == '2' or self.inputNumbers.text() == '3' or self.inputNumbers.text() == '4'):
             self.startAsteroids()
             self.startBonus()
             self.numberOfPlayers = self.inputNumbers.text();
+            self.numberOfPlayers = int(self.numberOfPlayers);
             self.startGame();
             self.rect.setHeight(0);
             self.rect.setWidth(0);
@@ -134,58 +181,57 @@ class theMainWindow(QMainWindow):
             self.inputNumbers.focusWidget().clearFocus();
             self.inputNumbers.hide();
             self.scoreLabel.show()
+            numOfLives = 3;
+            for i in range(self.numberOfPlayers):
+                for j in range(numOfLives):
+                    self.lifeBox.append(QLabel(self));
+            self.showAllLives();
             self.repaint();
-
-
 
     def paintEvent(self, e):
         qp = QPainter();
         qp.begin(self);
 
-        qp.setPen(QPen(self.spaceShip[0].color));
-        qp.drawLine(self.spaceShip[0].points[0], self.spaceShip[0].points[1]);
-        qp.drawLine(self.spaceShip[0].points[1], self.spaceShip[0].points[2]);
-        qp.drawLine(self.spaceShip[0].points[2], self.spaceShip[0].points[3]);
-        qp.drawLine(self.spaceShip[0].points[3], self.spaceShip[0].points[0]);
-        qp.drawLine(self.spaceShip[0].points[2], self.spaceShip[0].points[0]);
+        for i in range(int(self.numberOfPlayers)):
+            if(spaceShip[i].lives > 0):
+                if(spaceShip[i].isDead == False):
+                    qp.setPen(spaceShip[i].color);
+                    qp.drawLine(spaceShip[i].points[0], spaceShip[i].points[1]);
+                    qp.drawLine(spaceShip[i].points[1], spaceShip[i].points[2]);
+                    qp.drawLine(spaceShip[i].points[2], spaceShip[i].points[3]);
+                    qp.drawLine(spaceShip[i].points[3], spaceShip[i].points[0]);
+                    qp.drawLine(spaceShip[i].points[2], spaceShip[i].points[0]);
+                    qp.setPen(QPen(spaceShip[i].colorOfProjectile))
+                    qp.setBrush(QBrush(spaceShip[i].colorOfProjectile))
+                    qp.drawEllipse(spaceShip[i].projectile, 5, 5);
+            else:
+                spaceShip[i].isDead = True;
+                self.numberOfPlayers -= 1;
 
-        qp.setPen(QPen(self.spaceShip[0].colorOfProjectile))
-        qp.setBrush(QBrush(self.spaceShip[0].colorOfProjectile))
-        qp.drawEllipse(self.spaceShip[0].projectile,5,5);
-
-        if(self.spaceShip.__len__() == 2):
-            qp.setPen(QPen(self.spaceShip[1].color));
-            qp.drawLine(self.spaceShip[1].points[0], self.spaceShip[1].points[1]);
-            qp.drawLine(self.spaceShip[1].points[1], self.spaceShip[1].points[2]);
-            qp.drawLine(self.spaceShip[1].points[2], self.spaceShip[1].points[3]);
-            qp.drawLine(self.spaceShip[1].points[3], self.spaceShip[1].points[0]);
-            qp.drawLine(self.spaceShip[1].points[2], self.spaceShip[1].points[0]);
-            qp.setPen(QPen(self.spaceShip[1].colorOfProjectile))
-            qp.setBrush(QBrush(self.spaceShip[1].colorOfProjectile))
-            qp.drawEllipse(self.spaceShip[1].projectile, 5, 5);
         qp.setBrush(QBrush(Qt.black));
         qp.drawRect(self.rect);
-
-        for asteroid in asteroids:
-            if(asteroid != 'DESTROYED'):
-                qp.drawRect(asteroid.theMiddleX,asteroid.theMiddleY,5,5);
 
     def startGame(self):
         self.mode = "PLAYING";
         if(self.numberOfPlayers == '1'):
-            del self.spaceShip[-1];
+            del spaceShip[-1];
         background = QImage("./images/space.jpg")
         background = background.scaled(750,750);
         palette = QPalette();
         palette.setBrush(QPalette.Window,QBrush(background));
         self.setPalette(palette);
 
+
+
+        checking = Thread(target=self.checkIfDead,args=());
+        checking.start();
+
         self.repaint()
 
 
     def moveIt(self):
         for x in range(10):
-            self.spaceShip.move();
+            spaceShip.move();
             self.repaint();
 
     def rotate_spaceShip(self,angle,spaceShip):
@@ -203,16 +249,22 @@ class theMainWindow(QMainWindow):
 
     def keyPressEvent(self, e):
 
+
+        if e.key() == Qt.Key_Up and self.mode == "PLAYING":
+           #moving = multiprocessing.Process(target=self.spaceShip[0].move(),args=());
+           #moving.start()
+           spaceShip[0].move();
+           self.repaint();
         if e.key() == Qt.Key_Up and self.mode == "PLAYING" and e.isAutoRepeat():
            #moving = multiprocessing.Process(target=self.spaceShip[0].move(),args=());
            #moving.start()
-           self.spaceShip[0].move();
+           spaceShip[0].move();
            self.repaint();
-        if e.key() == Qt.Key_W and self.mode == "PLAYING" and self.spaceShip.__len__() == 2:
+        if e.key() == Qt.Key_W and self.mode == "PLAYING" and int(self.numberOfPlayers) > 1:
             #moving = multiprocessing.Process(target=self.spaceShip[0].move(), args=());
             #moving.start()
 
-            self.spaceShip[1].move();
+            spaceShip[1].move();
             self.repaint();
         if (e.key() == Qt.Key_Left and self.mode == "PLAYING") or (e.key() == Qt.Key_Right and self.mode == "PLAYING" ):
             angle = 0;
@@ -221,31 +273,31 @@ class theMainWindow(QMainWindow):
             else:
                 angle = 10
 
-            self.spaceShip[0] = self.rotate_spaceShip(angle,spaceShip=self.spaceShip[0]);
+            spaceShip[0] = self.rotate_spaceShip(angle,spaceShip=spaceShip[0]);
 
             self.repaint();
-        if ((e.key() == Qt.Key_A and self.mode == "PLAYING") or (e.key() == Qt.Key_D and self.mode == "PLAYING" )) and self.spaceShip.__len__() == 2:
+        if ((e.key() == Qt.Key_A and self.mode == "PLAYING") or (e.key() == Qt.Key_D and self.mode == "PLAYING" )) and int(self.numberOfPlayers) > 1:
             angle = 0;
             if(e.key() == Qt.Key_A):
                 angle = -10;
             else:
                 angle = 10
-            self.spaceShip[1] = self.rotate_spaceShip(angle,spaceShip=self.spaceShip[1]);
+            spaceShip[1] = self.rotate_spaceShip(angle,spaceShip=spaceShip[1]);
 
             self.repaint();
         if(e.key() == Qt.Key_PageDown):
-            self.spaceShip[0] = self.shoot(self.spaceShip[0])
-        if(e.key() == Qt.Key_Space and self.spaceShip.__len__() == 2):
-            self.spaceShip[1] = self.shoot(self.spaceShip[1])
+            spaceShip[0] = self.shoot(spaceShip[0])
+        if(e.key() == Qt.Key_Space and int(self.numberOfPlayers) > 1):
+            spaceShip[1] = self.shoot(spaceShip[1])
+
 
     def shoot(self,ship):
-
         ship.colorOfProjectile = ship.color;
         ship.projectile = QPointF(ship.points[0]);
 
         while ((ship.projectile.x() < 760 and ship.projectile.x() > -10) and(ship.projectile.y() < 760 and ship.projectile.y() > -10))  :
-            ship.projectile.setX(ship.projectile.x() + ship.vector.x() * ship.velocity/3);
-            ship.projectile.setY(ship.projectile.y() + ship.vector.y() * ship.velocity/3);
+            ship.projectile.setX(ship.projectile.x() + ship.vector.x() * ship.velocity);
+            ship.projectile.setY(ship.projectile.y() + ship.vector.y() * ship.velocity);
             for i in range (len(asteroids)):
                 if( asteroids[i] != 'DESTROYED' and (ship.projectile.x() >= asteroids[i].theMiddleX  - (asteroids[i].posMaxX - asteroids[i].posMinX)  and ship.projectile.x() <= asteroids[i].theMiddleX + (asteroids[i].posMaxX - asteroids[i].posMinX)) and (ship.projectile.y() >= asteroids[i].theMiddleY - (asteroids[i].posMaxY - asteroids[i].posMinY) and ship.projectile.y() <= asteroids[i].posMaxY + (asteroids[i].posMaxY - asteroids[i].posMinY))):
                     self.destroyAsteroid(asteroids[i])
@@ -255,6 +307,22 @@ class theMainWindow(QMainWindow):
             self.repaint();
         ship.reloadProjectile()
         return ship;
+
+
+    def checkIfDead(self):
+        while True:
+            for num in range(self.numberOfPlayers):
+                for point in spaceShip[num].points:
+                    for i in range(len(asteroids)):
+                        if (asteroids[i] != 'DESTROYED' and point.x() <= asteroids[i].posMaxX and point.x() >=
+                                asteroids[i].posMinX and point.y() >= asteroids[i].posMinY and point.y() <=
+                                asteroids[i].posMaxY):
+                            spaceShip[num].die();
+                            self.showAllLives();
+                            self.repaint();
+                            time.sleep(1)
+
+
 
     def startAsteroids(self):
         self.createAsteroids()
