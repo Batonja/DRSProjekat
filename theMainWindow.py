@@ -75,10 +75,11 @@ class theMainWindow(QMainWindow):
         background = QImage("./images/start_page.webp")
         background = background.scaled(QSize(750,750));
 
-        self.scoreLabel = QLabel('Score: 0', self);
-        self.scoreLabel.setGeometry(10, 10, 200, 50);
-        self.scoreLabel.setStyleSheet("font: 20pt Times new roman; color: green");
-        self.scoreLabel.hide()
+        self.scoreLabel = [QLabel('', self),QLabel('', self),QLabel('', self),QLabel('', self)]
+
+        #self.scoreLabel.setGeometry(10, 10, 200, 50);
+        #self.scoreLabel.setStyleSheet("font: 20pt Times new roman; color: green");
+        #self.scoreLabel.hide()
         self.numberOfPlayers = 0;
         self.points = 0
 
@@ -182,11 +183,13 @@ class theMainWindow(QMainWindow):
             self.labelPlayers.hide();
             self.inputNumbers.focusWidget().clearFocus();
             self.inputNumbers.hide();
-            self.scoreLabel.show()
+            self.showScore();
             numOfLives = 3;
             for i in range(self.numberOfPlayers):
+                self.scoreLabel[i].show();
                 for j in range(numOfLives):
                     self.lifeBox.append(QLabel(self));
+
             self.showAllLives();
             self.repaint();
 
@@ -314,8 +317,9 @@ class theMainWindow(QMainWindow):
         if(e.key() == Qt.Key_Space and int(self.numberOfPlayers) > 1):
             spaceShip[1] = self.shoot(spaceShip[1])
         if (e.key() == Qt.Key_Delete and int(self.numberOfPlayers) > 2):
-            spaceShip[1] = self.shoot(spaceShip[1])
-
+            spaceShip[2] = self.shoot(spaceShip[2])
+        if (e.key() == Qt.Key_Plus and int(self.numberOfPlayers) > 3):
+            spaceShip[3] = self.shoot(spaceShip[3])
 
     def shoot(self,ship):
         ship.colorOfProjectile = ship.color;
@@ -326,7 +330,7 @@ class theMainWindow(QMainWindow):
             ship.projectile.setY(ship.projectile.y() + ship.vector.y() * ship.velocity);
             for i in range (len(asteroids)):
                 if( asteroids[i] != 'DESTROYED' and (ship.projectile.x() >= asteroids[i].theMiddleX  - (asteroids[i].posMaxX - asteroids[i].posMinX)  and ship.projectile.x() <= asteroids[i].theMiddleX + (asteroids[i].posMaxX - asteroids[i].posMinX)) and (ship.projectile.y() >= asteroids[i].theMiddleY - (asteroids[i].posMaxY - asteroids[i].posMinY) and ship.projectile.y() <= asteroids[i].posMaxY + (asteroids[i].posMaxY - asteroids[i].posMinY))):
-                    self.destroyAsteroid(asteroids[i])
+                    self.destroyAsteroid(asteroids[i],ship)
                     ship.reloadProjectile();
                     self.repaint()
                     return ship;
@@ -425,10 +429,22 @@ class theMainWindow(QMainWindow):
             if l != 'DESTROYED':
                 l.show()
 
-    def destroyAsteroid(self, asteroid):
+    def showScore(self):
+        i = 1;
+        colors = ['red', 'green', 'yellow', 'magenta'];
+        for num in range(self.numberOfPlayers):
+            self.scoreLabel[num].hide()
+            self.scoreLabel[num].setText("Score(Player " + i.__str__() + "): " + spaceShip[num].score.__str__());
+            self.scoreLabel[num].setGeometry(20,20 + (num * 30),300,30);
+            self.scoreLabel[num].setStyleSheet("font: 20pt Times new roman; color:" + colors[num]);
+            self.scoreLabel[num].show();
+
+
+
+    def destroyAsteroid(self, asteroid,ship):
         asteroidIndex = asteroids.index(asteroid);
-        self.points += asteroid.points
-        self.scoreLabel.setText('Score: ' + str(self.points))
+        ship.score += asteroid.points
+        self.showScore()
 
         if asteroid.size == 1:
             asteroids[asteroidIndex] = 'DESTROYED'

@@ -14,6 +14,7 @@ class SpaceShip(QThread):
         self.color = (255, 25, 255);
         self.vector = QVector2D(QPointF(0.0,-1.0));
         self.velocity = 10;
+        self.score = 0;
         self.rotatedFor = 0;
         self.lives = 3;
         self.color = color;
