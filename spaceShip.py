@@ -46,10 +46,7 @@ class SpaceShip(QThread):
 
         ]
 
-    def keyPressEvent(self,e):
-        if e.key() == Qt.Key_F:
-            print("F");
-        e.accept();
+        print(self.color.__str__() + " spaceshipu ostalo jos: " + self.lives.__str__() + " zivota");
 
     def move(self):
        # print(self.x.__str__() + "+= " + self.vector.x().__str__() + "*" + self.velocity.__str__())
@@ -80,7 +77,7 @@ class SpaceShip(QThread):
            (x,y) = self.rotate_point(point,self.rotatedFor,MOVE_ROTATE.MOVE,(self.x,self.y));
            self.points[i] = QPointF(x,y);
            i += 1;
-       print("X: " + self.x.__str__() + "Y: " +  self.y.__str__());
+       #print("X: " + self.x.__str__() + "Y: " +  self.y.__str__());
 
 
 

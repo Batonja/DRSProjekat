@@ -161,8 +161,10 @@ class theMainWindow(QMainWindow):
             i += 1;
 
 
+
             if self.livesLabel[num].isHidden():
                 self.livesLabel[num].show()
+
 
 
 
@@ -204,9 +206,9 @@ class theMainWindow(QMainWindow):
                     qp.setPen(QPen(spaceShip[i].colorOfProjectile))
                     qp.setBrush(QBrush(spaceShip[i].colorOfProjectile))
                     qp.drawEllipse(spaceShip[i].projectile, 5, 5);
-            else:
+            elif(spaceShip[i].isDead == False):
                 spaceShip[i].isDead = True;
-                self.numberOfPlayers -= 1;
+
 
         qp.setBrush(QBrush(Qt.black));
         qp.drawRect(self.rect);
@@ -250,23 +252,27 @@ class theMainWindow(QMainWindow):
     def keyPressEvent(self, e):
 
 
-        if e.key() == Qt.Key_Up and self.mode == "PLAYING":
+        if e.key() == Qt.Key_Up and self.mode == "PLAYING" and spaceShip[0].isDead == False:
            #moving = multiprocessing.Process(target=self.spaceShip[0].move(),args=());
            #moving.start()
            spaceShip[0].move();
            self.repaint();
-        if e.key() == Qt.Key_Up and self.mode == "PLAYING" and e.isAutoRepeat():
-           #moving = multiprocessing.Process(target=self.spaceShip[0].move(),args=());
-           #moving.start()
-           spaceShip[0].move();
-           self.repaint();
-        if e.key() == Qt.Key_W and self.mode == "PLAYING" and int(self.numberOfPlayers) > 1:
+        if e.key() == Qt.Key_W and self.mode == "PLAYING" and int(self.numberOfPlayers) > 1 and spaceShip[1].isDead == False:
             #moving = multiprocessing.Process(target=self.spaceShip[0].move(), args=());
             #moving.start()
-
             spaceShip[1].move();
             self.repaint();
-        if (e.key() == Qt.Key_Left and self.mode == "PLAYING") or (e.key() == Qt.Key_Right and self.mode == "PLAYING" ):
+        if e.key() == Qt.Key_I and self.mode == "PLAYING" and int(self.numberOfPlayers) > 2 and spaceShip[2].isDead == False:
+            #moving = multiprocessing.Process(target=self.spaceShip[0].move(), args=());
+            #moving.start()
+            spaceShip[2].move();
+            self.repaint();
+        if e.key() == Qt.Key_8 and self.mode == "PLAYING" and int(self.numberOfPlayers) > 3 and spaceShip[3].isDead == False:
+            #moving = multiprocessing.Process(target=self.spaceShip[0].move(), args=());
+            #moving.start()
+            spaceShip[3].move();
+            self.repaint();
+        if (e.key() == Qt.Key_Left and self.mode == "PLAYING") or (e.key() == Qt.Key_Right and self.mode == "PLAYING" and spaceShip[0].isDead == False ):
             angle = 0;
             if(e.key() == Qt.Key_Left):
                 angle = -10;
@@ -276,7 +282,7 @@ class theMainWindow(QMainWindow):
             spaceShip[0] = self.rotate_spaceShip(angle,spaceShip=spaceShip[0]);
 
             self.repaint();
-        if ((e.key() == Qt.Key_A and self.mode == "PLAYING") or (e.key() == Qt.Key_D and self.mode == "PLAYING" )) and int(self.numberOfPlayers) > 1:
+        if ((e.key() == Qt.Key_A and self.mode == "PLAYING") or (e.key() == Qt.Key_D and self.mode == "PLAYING" )) and int(self.numberOfPlayers) > 1 and spaceShip[1].isDead == False:
             angle = 0;
             if(e.key() == Qt.Key_A):
                 angle = -10;
@@ -285,9 +291,29 @@ class theMainWindow(QMainWindow):
             spaceShip[1] = self.rotate_spaceShip(angle,spaceShip=spaceShip[1]);
 
             self.repaint();
+        if ((e.key() == Qt.Key_J and self.mode == "PLAYING") or (e.key() == Qt.Key_L and self.mode == "PLAYING" )) and int(self.numberOfPlayers) > 2 and spaceShip[2].isDead == False:
+            angle = 0;
+            if(e.key() == Qt.Key_J):
+                angle = -10;
+            else:
+                angle = 10
+            spaceShip[2] = self.rotate_spaceShip(angle,spaceShip=spaceShip[2]);
+
+            self.repaint();
+        if ((e.key() == Qt.Key_4 and self.mode == "PLAYING") or (e.key() == Qt.Key_6 and self.mode == "PLAYING" )) and int(self.numberOfPlayers) > 3 and spaceShip[3].isDead == False:
+            angle = 0;
+            if(e.key() == Qt.Key_4):
+                angle = -10;
+            else:
+                angle = 10
+            spaceShip[3] = self.rotate_spaceShip(angle,spaceShip=spaceShip[3]);
+
+            self.repaint();
         if(e.key() == Qt.Key_PageDown):
             spaceShip[0] = self.shoot(spaceShip[0])
         if(e.key() == Qt.Key_Space and int(self.numberOfPlayers) > 1):
+            spaceShip[1] = self.shoot(spaceShip[1])
+        if (e.key() == Qt.Key_Delete and int(self.numberOfPlayers) > 2):
             spaceShip[1] = self.shoot(spaceShip[1])
 
 
@@ -310,17 +336,27 @@ class theMainWindow(QMainWindow):
 
 
     def checkIfDead(self):
+        found = False;
         while True:
             for num in range(self.numberOfPlayers):
-                for point in spaceShip[num].points:
-                    for i in range(len(asteroids)):
-                        if (asteroids[i] != 'DESTROYED' and point.x() <= asteroids[i].posMaxX and point.x() >=
-                                asteroids[i].posMinX and point.y() >= asteroids[i].posMinY and point.y() <=
-                                asteroids[i].posMaxY):
-                            spaceShip[num].die();
-                            self.showAllLives();
-                            self.repaint();
-                            time.sleep(1)
+                if found:
+                    time.sleep(1);
+                found = False;
+                if(spaceShip[num].isDead == False):
+                    for point in spaceShip[num].points:
+                        for i in range(len(asteroids)):
+                            if (asteroids[i] != 'DESTROYED' and point.x() <= asteroids[i].posMaxX and point.x() >=
+                                    asteroids[i].posMinX and point.y() >= asteroids[i].posMinY and point.y() <=
+                                    asteroids[i].posMaxY):
+                                spaceShip[num].die();
+                                self.showAllLives()
+
+                                self.repaint();
+                                print("preziveo repaint");
+                                found = True;
+                                break;
+                        if found:
+                            break;
 
 
 
