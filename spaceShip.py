@@ -1,8 +1,8 @@
-from PyQt5.QtCore import QPointF,QRectF,Qt,QThread
-from PyQt5.QtGui import QVector2D,QPainter,QPen
-from PyQt5.QtWidgets import QWidget
-from math import ceil,sin,cos,radians;
+from PyQt5.QtCore import QPointF,Qt,QThread
+from PyQt5.QtGui import QVector2D
+from math import sin,cos,radians;
 from moveRotate import MOVE_ROTATE;
+from tournamentPlayWait import PLAY_WAIT
 
 class SpaceShip(QThread):
     def __init__(self,x,y,color):
@@ -16,6 +16,7 @@ class SpaceShip(QThread):
         self.velocity = 10;
         self.score = 0;
         self.rotatedFor = 0;
+        self.tournamentPlaying = PLAY_WAIT.NO;
         self.lives = 3;
         self.color = color;
         self.isDead = False;
@@ -39,6 +40,7 @@ class SpaceShip(QThread):
         self.x = 350;
         self.y = 350;
         self.lives -= 1;
+
         self.points = [
             QPointF(self.x, self.y - (self.height / 2.0)),
             QPointF(self.x - ((self.width / 2.0)), self.y + (self.height / 2.0)),
@@ -46,6 +48,7 @@ class SpaceShip(QThread):
             QPointF(self.x + (self.width / 2.0), self.y + (self.height / 2.0)),
 
         ]
+
 
         print(self.color.__str__() + " spaceshipu ostalo jos: " + self.lives.__str__() + " zivota");
 
@@ -85,6 +88,7 @@ class SpaceShip(QThread):
 
 
     def rotate(self,point,angle):
+
         angle = radians(angle % 360)
         point = (point[0] * cos(angle) - point[1] * sin(angle),
                  point[0] * sin(angle) + point[1] * cos(angle))

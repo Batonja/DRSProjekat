@@ -1,15 +1,16 @@
-from PyQt5.QtWidgets import QMainWindow,QLabel,QApplication,QLineEdit,QPushButton,QVBoxLayout,QHBoxLayout,QWidget
+from PyQt5.QtWidgets import QMainWindow,QLabel,QApplication,QLineEdit,QPushButton,QCheckBox
 from PyQt5.QtGui import QImage,QPalette,QBrush,QFont,QPainter, QPixmap,QPen
 from PyQt5.QtCore import QSize,Qt,QPointF,QThread, pyqtSignal,QRect,QEvent
-from threading import Thread
+from threading import Thread,RLock
 from math import sin,cos,radians;
 from spaceShip import SpaceShip;
 import sys, time;
-from pynput.keyboard import Key, Controller
+from tournamentPlayWait import PLAY_WAIT;
 from asteroid import Asteroid
 from random import randrange, randint
 from moveRotate import MOVE_ROTATE;
-import multiprocessing
+from multiprocessing import Pool,Process;
+
 asteroids = []
 asteroidLabels = []
 smallAsteroidSize = 40;
@@ -17,7 +18,7 @@ mediumAsteroidSize = 60;
 bigAsteroidSize = 80;
 goldAsteroidTimer = 10
 spaceShip = [SpaceShip(350,350,Qt.red),SpaceShip(350,350,Qt.green),SpaceShip(350,350,Qt.yellow),SpaceShip(350,350,Qt.magenta)]
-
+theKeys = set();
 
 class AsteroidsThread(QThread):
     signal = pyqtSignal()
@@ -97,7 +98,14 @@ class theMainWindow(QMainWindow):
         self.startButton = QPushButton("Start",self);
         self.startButton.setGeometry(305,490,190,50);
         self.startButton.clicked.connect(self.setPlayers)
-
+        self.tournamentTick = QCheckBox("",self);
+        self.tournamentTick.setGeometry(450,370,100,100);
+        self.tournamentLabel = QLabel("Tournament",self);
+        self.tournamentLabel.move(320, 400)
+        self.tournamentLabel.setFixedSize(125,35)
+        self.tournamentLabel.setFont(QFont("Times new roman",18));
+        self.tournamentLabel.setStyleSheet("color:white")
+        self.tournament = False;
 
         self.livesLabel = [QLabel("Player 1: ", self), QLabel("Player 2: ", self), QLabel("Player 3: ", self),
                            QLabel("Player 4: ", self)];
@@ -142,6 +150,7 @@ class theMainWindow(QMainWindow):
 
     def showAllLives(self):
         i = 1
+
         pixmaps = [QPixmap("./images/lives/redLife.png").scaled(20, 20),
                    QPixmap("./images/lives/greenLife.png").scaled(20, 20),
                    QPixmap("./images/lives/yellowLife.png").scaled(20, 20),
@@ -163,19 +172,25 @@ class theMainWindow(QMainWindow):
 
 
 
+
             if self.livesLabel[num].isHidden():
                 self.livesLabel[num].show()
 
-
+        
 
 
 
     def setPlayers(self):
-        if(self.inputNumbers.text() == '1' or self.inputNumbers.text() == '2' or self.inputNumbers.text() == '3' or self.inputNumbers.text() == '4'):
+        if(self.inputNumbers.text() == '1' or self.inputNumbers.text() == '2' or self.inputNumbers.text() == '3' or self.inputNumbers.text() == '4') or self.tournamentTick.isChecked() == True:
             self.startAsteroids()
             self.startBonus()
-            self.numberOfPlayers = self.inputNumbers.text();
-            self.numberOfPlayers = int(self.numberOfPlayers);
+
+            if self.tournamentTick.isChecked():
+                self.numberOfPlayers = 4;
+            else:
+                self.numberOfPlayers = self.inputNumbers.text();
+                self.numberOfPlayers = int(self.numberOfPlayers);
+
             self.startGame();
             self.rect.setHeight(0);
             self.rect.setWidth(0);
@@ -183,23 +198,68 @@ class theMainWindow(QMainWindow):
             self.labelPlayers.hide();
             self.inputNumbers.focusWidget().clearFocus();
             self.inputNumbers.hide();
+            self.tournamentLabel.hide();
+            self.tournamentTick.hide();
             self.showScore();
+            self.tournamentTick.focusWidget().clearFocus();
+            if self.tournamentTick.isChecked():
+                self.tournament = True;
+                self.ucesnik1Index = self.generateRandomNumber([-1]);
+                self.ucesnik2Index = self.generateRandomNumber([self.ucesnik1Index]);
+                spaceShip[self.ucesnik1Index].tournamentPlaying = PLAY_WAIT.PLAY;
+                spaceShip[self.ucesnik2Index].tournamentPlaying = PLAY_WAIT.PLAY;
+
+                for i in range(spaceShip.__len__()):
+                    if (i != self.ucesnik1Index and i != self.ucesnik2Index):
+                        spaceShip[i].tournamentPlaying = PLAY_WAIT.WAIT;
+            else:
+                self.tournament = False;
+
+
             numOfLives = 3;
             for i in range(self.numberOfPlayers):
                 self.scoreLabel[i].show();
                 for j in range(numOfLives):
                     self.lifeBox.append(QLabel(self));
 
+
+
+
             self.showAllLives();
             self.repaint();
+
+    def generateRandomNumber(self,number):
+        exclude = number;
+        randomNum = randint(0,3);
+        return self.generateRandomNumber(number) if randomNum in exclude else randomNum;
 
     def paintEvent(self, e):
         qp = QPainter();
         qp.begin(self);
+        lock = RLock();
+        if self.tournament == False:
+            for i in range(int(self.numberOfPlayers)):
+                lock.acquire();
+                if(spaceShip[i].lives > 0):
+                    if(spaceShip[i].isDead == False ):
+                        qp.setPen(spaceShip[i].color);
+                        qp.drawLine(spaceShip[i].points[0], spaceShip[i].points[1]);
+                        qp.drawLine(spaceShip[i].points[1], spaceShip[i].points[2]);
+                        qp.drawLine(spaceShip[i].points[2], spaceShip[i].points[3]);
+                        qp.drawLine(spaceShip[i].points[3], spaceShip[i].points[0]);
+                        qp.drawLine(spaceShip[i].points[2], spaceShip[i].points[0]);
+                        qp.setPen(QPen(spaceShip[i].colorOfProjectile))
+                        qp.setBrush(QBrush(spaceShip[i].colorOfProjectile))
+                        qp.drawEllipse(spaceShip[i].projectile, 5, 5);
+                elif(spaceShip[i].isDead == False):
+                    spaceShip[i].isDead = True;
+                    spaceShip[i].x = None;
+                    spaceShip[i].y = None;
+                lock.release();
+        else:
+            for i in range(int(self.numberOfPlayers)):
 
-        for i in range(int(self.numberOfPlayers)):
-            if(spaceShip[i].lives > 0):
-                if(spaceShip[i].isDead == False):
+                if(spaceShip[i].tournamentPlaying == PLAY_WAIT.PLAY and spaceShip[i].lives > 0):
                     qp.setPen(spaceShip[i].color);
                     qp.drawLine(spaceShip[i].points[0], spaceShip[i].points[1]);
                     qp.drawLine(spaceShip[i].points[1], spaceShip[i].points[2]);
@@ -209,9 +269,6 @@ class theMainWindow(QMainWindow):
                     qp.setPen(QPen(spaceShip[i].colorOfProjectile))
                     qp.setBrush(QBrush(spaceShip[i].colorOfProjectile))
                     qp.drawEllipse(spaceShip[i].projectile, 5, 5);
-            elif(spaceShip[i].isDead == False):
-                spaceShip[i].isDead = True;
-
 
         qp.setBrush(QBrush(Qt.black));
         qp.drawRect(self.rect);
@@ -226,10 +283,9 @@ class theMainWindow(QMainWindow):
         palette.setBrush(QPalette.Window,QBrush(background));
         self.setPalette(palette);
 
-
-
-        checking = Thread(target=self.checkIfDead,args=());
-        checking.start();
+        #OVDE se pokrece checkIfDead !!!
+        check = Thread(target=self.checkIfDead,args=());
+        check.start();
 
         self.repaint()
 
@@ -252,86 +308,120 @@ class theMainWindow(QMainWindow):
 
         return spaceShip;
 
-    def keyPressEvent(self, e):
+    def puppetShow(self):
+        if Qt.Key_Up in theKeys and self.mode == "PLAYING" and spaceShip[0].isDead == False and spaceShip[
+            0].tournamentPlaying != PLAY_WAIT.WAIT:
+            # moving = multiprocessing.Process(target=self.spaceShip[0].move(),args=());
+            # moving.start()
+            spaceShip[0].move();
+            self.repaint();
 
-
-        if e.key() == Qt.Key_Up and self.mode == "PLAYING" and spaceShip[0].isDead == False:
-           #moving = multiprocessing.Process(target=self.spaceShip[0].move(),args=());
-           #moving.start()
-           spaceShip[0].move();
-           self.repaint();
-        if e.key() == Qt.Key_W and self.mode == "PLAYING" and int(self.numberOfPlayers) > 1 and spaceShip[1].isDead == False:
-            #moving = multiprocessing.Process(target=self.spaceShip[0].move(), args=());
-            #moving.start()
+        if Qt.Key_W in theKeys and self.mode == "PLAYING" and int(self.numberOfPlayers) > 1 and spaceShip[
+            1].isDead == False and spaceShip[1].tournamentPlaying != PLAY_WAIT.WAIT:
+            # moving = multiprocessing.Process(target=self.spaceShip[0].move(), args=());
+            # moving.start()
             spaceShip[1].move();
             self.repaint();
-        if e.key() == Qt.Key_I and self.mode == "PLAYING" and int(self.numberOfPlayers) > 2 and spaceShip[2].isDead == False:
-            #moving = multiprocessing.Process(target=self.spaceShip[0].move(), args=());
-            #moving.start()
+        if  Qt.Key_I in theKeys and self.mode == "PLAYING" and int(self.numberOfPlayers) > 2 and spaceShip[
+            2].isDead == False and spaceShip[2].tournamentPlaying != PLAY_WAIT.WAIT:
+            # moving = multiprocessing.Process(target=self.spaceShip[0].move(), args=());
+            # moving.start()
             spaceShip[2].move();
             self.repaint();
-        if e.key() == Qt.Key_8 and self.mode == "PLAYING" and int(self.numberOfPlayers) > 3 and spaceShip[3].isDead == False:
-            #moving = multiprocessing.Process(target=self.spaceShip[0].move(), args=());
-            #moving.start()
+        if Qt.Key_8  in theKeys  and self.mode == "PLAYING" and int(self.numberOfPlayers) > 3 and spaceShip[
+            3].isDead == False and spaceShip[3].tournamentPlaying != PLAY_WAIT.WAIT:
+            # moving = multiprocessing.Process(target=self.spaceShip[0].move(), args=());
+            # moving.start()
             spaceShip[3].move();
             self.repaint();
-        if (e.key() == Qt.Key_Left and self.mode == "PLAYING") or (e.key() == Qt.Key_Right and self.mode == "PLAYING" and spaceShip[0].isDead == False ):
+        if (Qt.Key_Left  in theKeys  and self.mode == "PLAYING" and spaceShip[0].tournamentPlaying != PLAY_WAIT.WAIT) or (
+                Qt.Key_Right in theKeys  and self.mode == "PLAYING" and spaceShip[0].isDead == False and spaceShip[
+            0].tournamentPlaying != PLAY_WAIT.WAIT):
             angle = 0;
-            if(e.key() == Qt.Key_Left):
+            if (Qt.Key_Left  in theKeys ):
                 angle = -10;
             else:
                 angle = 10
 
-            spaceShip[0] = self.rotate_spaceShip(angle,spaceShip=spaceShip[0]);
+            spaceShip[0] = self.rotate_spaceShip(angle, spaceShip=spaceShip[0]);
 
             self.repaint();
-        if ((e.key() == Qt.Key_A and self.mode == "PLAYING") or (e.key() == Qt.Key_D and self.mode == "PLAYING" )) and int(self.numberOfPlayers) > 1 and spaceShip[1].isDead == False:
+        if ((Qt.Key_A  in theKeys  and self.mode == "PLAYING" and spaceShip[1].tournamentPlaying != PLAY_WAIT.WAIT) or (
+                Qt.Key_D  in theKeys  and self.mode == "PLAYING" and spaceShip[
+            1].tournamentPlaying != PLAY_WAIT.WAIT)) and int(self.numberOfPlayers) > 1 and spaceShip[1].isDead == False:
             angle = 0;
-            if(e.key() == Qt.Key_A):
+            if (Qt.Key_A  in theKeys ):
                 angle = -10;
             else:
                 angle = 10
-            spaceShip[1] = self.rotate_spaceShip(angle,spaceShip=spaceShip[1]);
+            spaceShip[1] = self.rotate_spaceShip(angle, spaceShip=spaceShip[1]);
 
             self.repaint();
-        if ((e.key() == Qt.Key_J and self.mode == "PLAYING") or (e.key() == Qt.Key_L and self.mode == "PLAYING" )) and int(self.numberOfPlayers) > 2 and spaceShip[2].isDead == False:
+        if ((Qt.Key_J  in theKeys  and self.mode == "PLAYING" and spaceShip[2].tournamentPlaying != PLAY_WAIT.WAIT) or (
+                Qt.Key_L  in theKeys  and self.mode == "PLAYING" and spaceShip[
+            2].tournamentPlaying != PLAY_WAIT.WAIT)) and int(self.numberOfPlayers) > 2 and spaceShip[2].isDead == False:
             angle = 0;
-            if(e.key() == Qt.Key_J):
+            if (Qt.Key_J  in theKeys ):
                 angle = -10;
             else:
                 angle = 10
-            spaceShip[2] = self.rotate_spaceShip(angle,spaceShip=spaceShip[2]);
+            spaceShip[2] = self.rotate_spaceShip(angle, spaceShip=spaceShip[2]);
 
             self.repaint();
-        if ((e.key() == Qt.Key_4 and self.mode == "PLAYING") or (e.key() == Qt.Key_6 and self.mode == "PLAYING" )) and int(self.numberOfPlayers) > 3 and spaceShip[3].isDead == False:
+        if ((Qt.Key_4 in theKeys  and self.mode == "PLAYING" and spaceShip[3].tournamentPlaying != PLAY_WAIT.WAIT) or (
+                Qt.Key_6  in theKeys  and self.mode == "PLAYING" and spaceShip[
+            3].tournamentPlaying != PLAY_WAIT.WAIT)) and int(self.numberOfPlayers) > 3 and spaceShip[3].isDead == False:
             angle = 0;
-            if(e.key() == Qt.Key_4):
+            if (Qt.Key_4  in theKeys ):
                 angle = -10;
             else:
                 angle = 10
-            spaceShip[3] = self.rotate_spaceShip(angle,spaceShip=spaceShip[3]);
+            spaceShip[3] = self.rotate_spaceShip(angle, spaceShip=spaceShip[3]);
 
             self.repaint();
-        if(e.key() == Qt.Key_PageDown):
+        if (Qt.Key_PageDown  in theKeys  and spaceShip[0].tournamentPlaying != PLAY_WAIT.WAIT):
+            lock = RLock();
+            lock.acquire();
             spaceShip[0] = self.shoot(spaceShip[0])
-        if(e.key() == Qt.Key_Space and int(self.numberOfPlayers) > 1):
+            lock.release();
+        if (Qt.Key_Space  in theKeys  and int(self.numberOfPlayers) > 1 and spaceShip[
+            1].tournamentPlaying != PLAY_WAIT.WAIT):
             spaceShip[1] = self.shoot(spaceShip[1])
-        if (e.key() == Qt.Key_Delete and int(self.numberOfPlayers) > 2):
+        if (Qt.Key_Delete  in theKeys  and int(self.numberOfPlayers) > 2 and spaceShip[
+            2].tournamentPlaying != PLAY_WAIT.WAIT):
             spaceShip[2] = self.shoot(spaceShip[2])
-        if (e.key() == Qt.Key_Plus and int(self.numberOfPlayers) > 3):
+        if (Qt.Key_Plus  in theKeys  and int(self.numberOfPlayers) > 3 and spaceShip[
+            3].tournamentPlaying != PLAY_WAIT.WAIT):
             spaceShip[3] = self.shoot(spaceShip[3])
 
+
+
+    
+    def keyPressEvent(self, e):
+        lock = RLock();
+        if self.mode == "PLAYING":
+            theKeys.add(e.key())
+            t = Thread(target=self.puppetShow,args=());
+            t.start();
+
+    def keyReleaseEvent(self, e):
+        lock = RLock();
+        if(self.mode == "PLAYING"):
+            if(theKeys.__contains__(e.key())):
+                lock.acquire();
+                theKeys.remove(e.key());
+                lock.release();
     def shoot(self,ship):
         ship.colorOfProjectile = ship.color;
         ship.projectile = QPointF(ship.points[0]);
-
+        lock = RLock();
         while ((ship.projectile.x() < 760 and ship.projectile.x() > -10) and(ship.projectile.y() < 760 and ship.projectile.y() > -10))  :
             ship.projectile.setX(ship.projectile.x() + ship.vector.x() * ship.velocity);
             ship.projectile.setY(ship.projectile.y() + ship.vector.y() * ship.velocity);
             for i in range (len(asteroids)):
                 if( asteroids[i] != 'DESTROYED' and (ship.projectile.x() >= asteroids[i].theMiddleX  - (asteroids[i].posMaxX - asteroids[i].posMinX)  and ship.projectile.x() <= asteroids[i].theMiddleX + (asteroids[i].posMaxX - asteroids[i].posMinX)) and (ship.projectile.y() >= asteroids[i].theMiddleY - (asteroids[i].posMaxY - asteroids[i].posMinY) and ship.projectile.y() <= asteroids[i].posMaxY + (asteroids[i].posMaxY - asteroids[i].posMinY))):
-                    self.destroyAsteroid(asteroids[i],ship)
                     ship.reloadProjectile();
+                    self.destroyAsteroid(asteroids[i],ship)
                     self.repaint()
                     return ship;
             self.repaint();
@@ -354,7 +444,6 @@ class theMainWindow(QMainWindow):
                                     asteroids[i].posMaxY):
                                 spaceShip[num].die();
                                 self.showAllLives()
-
                                 self.repaint();
                                 print("preziveo repaint");
                                 found = True;
@@ -362,13 +451,12 @@ class theMainWindow(QMainWindow):
                         if found:
                             break;
 
-
-
     def startAsteroids(self):
         self.createAsteroids()
         self.thread = AsteroidsThread()
         self.thread.signal.connect(self.update)
         self.thread.start()
+
 
     def startBonus(self):
         self.bonusThread = BonusAsteroidThread()
@@ -438,7 +526,7 @@ class theMainWindow(QMainWindow):
             self.scoreLabel[num].setGeometry(20,20 + (num * 30),300,30);
             self.scoreLabel[num].setStyleSheet("font: 20pt Times new roman; color:" + colors[num]);
             self.scoreLabel[num].show();
-
+            i += 1;
 
 
     def destroyAsteroid(self, asteroid,ship):
