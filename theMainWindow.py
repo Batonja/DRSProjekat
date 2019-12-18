@@ -1,7 +1,7 @@
 from PyQt5.QtWidgets import QMainWindow,QLabel,QApplication,QLineEdit,QPushButton,QCheckBox
 from PyQt5.QtGui import QImage,QPalette,QBrush,QFont,QPainter, QPixmap,QPen
 from PyQt5.QtCore import QSize,Qt,QPointF,QThread, pyqtSignal,QRect,QEvent
-from threading import Thread,RLock
+from threading import Thread,Lock,RLock
 from math import sin,cos,radians;
 from spaceShip import SpaceShip;
 import sys, time;
@@ -236,7 +236,7 @@ class theMainWindow(QMainWindow):
     def paintEvent(self, e):
         qp = QPainter();
         qp.begin(self);
-        lock = RLock();
+        lock = RLock()
         if self.tournament == False:
             for i in range(int(self.numberOfPlayers)):
                 lock.acquire();
@@ -284,8 +284,8 @@ class theMainWindow(QMainWindow):
         self.setPalette(palette);
 
         #OVDE se pokrece checkIfDead !!!
-        check = Thread(target=self.checkIfDead,args=());
-        check.start();
+        #check = Thread(target=self.checkIfDead,args=());
+       # check.start();
 
         self.repaint()
 
@@ -309,18 +309,24 @@ class theMainWindow(QMainWindow):
         return spaceShip;
 
     def puppetShow(self):
+
         if Qt.Key_Up in theKeys and self.mode == "PLAYING" and spaceShip[0].isDead == False and spaceShip[
             0].tournamentPlaying != PLAY_WAIT.WAIT:
             # moving = multiprocessing.Process(target=self.spaceShip[0].move(),args=());
             # moving.start()
+
+
             spaceShip[0].move();
+
             self.repaint();
 
         if Qt.Key_W in theKeys and self.mode == "PLAYING" and int(self.numberOfPlayers) > 1 and spaceShip[
             1].isDead == False and spaceShip[1].tournamentPlaying != PLAY_WAIT.WAIT:
             # moving = multiprocessing.Process(target=self.spaceShip[0].move(), args=());
             # moving.start()
+
             spaceShip[1].move();
+
             self.repaint();
         if  Qt.Key_I in theKeys and self.mode == "PLAYING" and int(self.numberOfPlayers) > 2 and spaceShip[
             2].isDead == False and spaceShip[2].tournamentPlaying != PLAY_WAIT.WAIT:
@@ -380,10 +386,10 @@ class theMainWindow(QMainWindow):
 
             self.repaint();
         if (Qt.Key_PageDown  in theKeys  and spaceShip[0].tournamentPlaying != PLAY_WAIT.WAIT):
-            lock = RLock();
-            lock.acquire();
+
+
             spaceShip[0] = self.shoot(spaceShip[0])
-            lock.release();
+
         if (Qt.Key_Space  in theKeys  and int(self.numberOfPlayers) > 1 and spaceShip[
             1].tournamentPlaying != PLAY_WAIT.WAIT):
             spaceShip[1] = self.shoot(spaceShip[1])
@@ -403,7 +409,7 @@ class theMainWindow(QMainWindow):
             theKeys.add(e.key())
             t = Thread(target=self.puppetShow,args=());
             t.start();
-
+            t.join();
     def keyReleaseEvent(self, e):
         lock = RLock();
         if(self.mode == "PLAYING"):
