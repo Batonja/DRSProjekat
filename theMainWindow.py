@@ -65,7 +65,7 @@ class theMainWindow(QMainWindow):
         self.bigAsteroidPixMap = QPixmap('./images/asteroid1.png').scaled(bigAsteroidSize, bigAsteroidSize, Qt.IgnoreAspectRatio)
         self.goldAsteroidPixmap = QPixmap('./images/gold_asteroid.png').scaled(bigAsteroidSize, bigAsteroidSize, Qt.IgnoreAspectRatio)
 
-        self.asteroidCount = 20
+        self.asteroidCount = 5
 
         self.initUI();
 
@@ -81,8 +81,9 @@ class theMainWindow(QMainWindow):
         #self.scoreLabel.setGeometry(10, 10, 200, 50);
         #self.scoreLabel.setStyleSheet("font: 20pt Times new roman; color: green");
         #self.scoreLabel.hide()
-        self.numberOfPlayers = 0;
+        self.numberOfPlayers = 0
         self.points = 0
+        self.currentLevel = 0
 
         palette = QPalette();
         palette.setBrush(QPalette.Window,QBrush(background))
@@ -125,11 +126,6 @@ class theMainWindow(QMainWindow):
         self.show();
 
     def createBonusAsteroid(self):
-        self.testLabel = QLabel('TESTLABEL', self);
-        self.testLabel.setGeometry(10, 70, 200, 50);
-        self.testLabel.setStyleSheet("font: 20pt Times new roman; color: green");
-        self.testLabel.show()
-
         randomDirection = randint(0, 1)
         posX = randrange(1, 750)
         posY = randrange(1, 750)
@@ -170,15 +166,8 @@ class theMainWindow(QMainWindow):
 
             i += 1;
 
-
-
-
             if self.livesLabel[num].isHidden():
                 self.livesLabel[num].show()
-
-        
-
-
 
     def setPlayers(self):
         if(self.inputNumbers.text() == '1' or self.inputNumbers.text() == '2' or self.inputNumbers.text() == '3' or self.inputNumbers.text() == '4') or self.tournamentTick.isChecked() == True:
@@ -190,6 +179,16 @@ class theMainWindow(QMainWindow):
             else:
                 self.numberOfPlayers = self.inputNumbers.text();
                 self.numberOfPlayers = int(self.numberOfPlayers);
+
+            self.asteroidCountLabel = QLabel('Alive Count: ' + str(self.aliveAsteroidsCount()), self);
+            self.asteroidCountLabel.setGeometry(10, 70, 200, 50);
+            self.asteroidCountLabel.setStyleSheet("font: 20pt Times new roman; color: green");
+            self.asteroidCountLabel.show()
+
+            self.levelCountLabel = QLabel('', self);
+            self.levelCountLabel.setGeometry(10, 100, 200, 50);
+            self.levelCountLabel.setStyleSheet("font: 20pt Times new roman; color: green");
+            self.levelCountLabel.show()
 
             self.startGame();
             self.rect.setHeight(0);
@@ -386,8 +385,6 @@ class theMainWindow(QMainWindow):
 
             self.repaint();
         if (Qt.Key_PageDown  in theKeys  and spaceShip[0].tournamentPlaying != PLAY_WAIT.WAIT):
-
-
             spaceShip[0] = self.shoot(spaceShip[0])
 
         if (Qt.Key_Space  in theKeys  and int(self.numberOfPlayers) > 1 and spaceShip[
@@ -400,9 +397,6 @@ class theMainWindow(QMainWindow):
             3].tournamentPlaying != PLAY_WAIT.WAIT):
             spaceShip[3] = self.shoot(spaceShip[3])
 
-
-
-    
     def keyPressEvent(self, e):
         lock = RLock();
         if self.mode == "PLAYING":
@@ -458,7 +452,7 @@ class theMainWindow(QMainWindow):
                             break;
 
     def startAsteroids(self):
-        self.createAsteroids()
+        #self.createAsteroids()
         self.thread = AsteroidsThread()
         self.thread.signal.connect(self.update)
         self.thread.start()
@@ -469,8 +463,10 @@ class theMainWindow(QMainWindow):
         self.bonusThread.signal.connect(self.createBonusAsteroid)
         self.bonusThread.start()
 
-
     def update(self):
+        self.asteroidCountLabel.setText('Alive: ' + str(self.aliveAsteroidsCount()))
+        self.createAsteroids()
+
         for l in asteroidLabels:
             if l != 'DESTROYED':
                 l.hide()
@@ -489,34 +485,37 @@ class theMainWindow(QMainWindow):
                 asteroidLabels[i].show()
 
     def createAsteroids(self):
-        for a in range(self.asteroidCount):
-            randomDirection = randint(0, 1)
-            posX = randrange(1, 750)
-            posY = randrange(1, 750)
-            size = randrange(1, 4)
-            asteroid = Asteroid(size, posX, posY, 3, randomDirection)
+        if self.aliveAsteroidsCount() == 0:
+            self.currentLevel += 1
+            self.levelCountLabel.setText('Level: ' + str(self.currentLevel))
 
-            lab = QLabel(self)
+            #Na svakom nivou ima 5 vise asteroida
+            self.asteroidCount += 5
 
-            if size == 1:
-                lab.setPixmap(self.smallAsteroidPixMap)
-                asteroid.whatSizeAmI = 'SMALL';
+            for a in range(self.asteroidCount):
+                randomDirection = randint(0, 1)
+                posX = randrange(1, 750)
+                posY = randrange(1, 750)
+                size = randrange(1, 4)
+                asteroid = Asteroid(size, posX, posY, 3, randomDirection)
 
+                lab = QLabel(self)
 
-            elif size == 2:
-                lab.setPixmap(self.mediumAsteroidPixMap)
-                asteroid.whatSizeAmI = 'MEDIUM';
+                if size == 1:
+                    lab.setPixmap(self.smallAsteroidPixMap)
+                    asteroid.whatSizeAmI = 'SMALL';
+                elif size == 2:
+                    lab.setPixmap(self.mediumAsteroidPixMap)
+                    asteroid.whatSizeAmI = 'MEDIUM';
+                else:
+                    lab.setPixmap(self.bigAsteroidPixMap)
+                    asteroid.whatSizeAmI = 'BIG';
 
+                lab.setGeometry(asteroid.posX,asteroid.posY,100,100);
+                asteroids.append(asteroid)
+                asteroidLabels.append(lab)
 
-            else:
-                lab.setPixmap(self.bigAsteroidPixMap)
-                asteroid.whatSizeAmI = 'BIG';
-
-            lab.setGeometry(asteroid.posX,asteroid.posY,100,100);
-            asteroids.append(asteroid)
-            asteroidLabels.append(lab)
-
-        self.showAsteroids()
+            self.showAsteroids()
 
     def showAsteroids(self):
         for l in asteroidLabels:
@@ -546,16 +545,16 @@ class theMainWindow(QMainWindow):
             asteroidLabels[asteroidIndex] = 'DESTROYED'
             print('Small asteroid has been destroyed')
         elif asteroid.size == 2:
-            self.createSmallAsteroid(asteroid.posX, asteroid.posY, 0, 1);
-            self.createSmallAsteroid(asteroid.posX, asteroid.posY, 1, 1);
+            #self.createSmallAsteroid(asteroid.posX, asteroid.posY, 0, 1);
+            #self.createSmallAsteroid(asteroid.posX, asteroid.posY, 1, 1);
             asteroids[asteroidIndex] = 'DESTROYED'
             asteroidLabels[asteroidIndex].hide()
             asteroidLabels[asteroidIndex] = 'DESTROYED'
             print('Medium asteroid has been destroyed')
         else:
             # kreiraj nove asteroide
-            self.createSmallAsteroid(asteroid.posX, asteroid.posY, 0, 2);
-            self.createSmallAsteroid(asteroid.posX, asteroid.posY, 1, 2);
+            #self.createSmallAsteroid(asteroid.posX, asteroid.posY, 0, 2);
+            #self.createSmallAsteroid(asteroid.posX, asteroid.posY, 1, 2);
 
             asteroids[asteroidIndex] = 'DESTROYED'
             asteroidLabels[asteroidIndex].hide()
