@@ -283,8 +283,8 @@ class theMainWindow(QMainWindow):
         self.setPalette(palette);
 
         #OVDE se pokrece checkIfDead !!!
-        #check = Thread(target=self.checkIfDead,args=());
-       # check.start();
+        check = Thread(target=self.checkIfDead,args=());
+        check.start();
 
         self.repaint()
 
@@ -384,7 +384,7 @@ class theMainWindow(QMainWindow):
             spaceShip[3] = self.rotate_spaceShip(angle, spaceShip=spaceShip[3]);
 
             self.repaint();
-        if (Qt.Key_PageDown  in theKeys  and spaceShip[0].tournamentPlaying != PLAY_WAIT.WAIT):
+        if (Qt.Key_NumLock  in theKeys  and spaceShip[0].tournamentPlaying != PLAY_WAIT.WAIT):
             spaceShip[0] = self.shoot(spaceShip[0])
 
         if (Qt.Key_Space  in theKeys  and int(self.numberOfPlayers) > 1 and spaceShip[
@@ -432,9 +432,9 @@ class theMainWindow(QMainWindow):
     def checkIfDead(self):
         found = False;
         while True:
+            time.sleep(0.07)
             for num in range(self.numberOfPlayers):
-                if found:
-                    time.sleep(1);
+
                 found = False;
                 if(spaceShip[num].isDead == False):
                     for point in spaceShip[num].points:
@@ -448,6 +448,8 @@ class theMainWindow(QMainWindow):
                                 print("preziveo repaint");
                                 found = True;
                                 break;
+
+
                         if found:
                             break;
 
@@ -507,9 +509,33 @@ class theMainWindow(QMainWindow):
                 elif size == 2:
                     lab.setPixmap(self.mediumAsteroidPixMap)
                     asteroid.whatSizeAmI = 'MEDIUM';
+                    a = Asteroid(1, 0, 0, 3, 1);
+                    a.isHidden = True;
+                    a1 = Asteroid(1, 0, 0, 3, 1);
+                    a1.isHidden = True;
+                    asteroids.append(a);
+                    asteroids.append(a1);
+                    l = QLabel(self);
+                    l.setPixmap(self.smallAsteroidPixMap);
+                    l1 = QLabel(self);
+                    l1.setPixmap(self.smallAsteroidPixMap);
+                    asteroidLabels.append(l);
+                    asteroidLabels.append(l1);
                 else:
                     lab.setPixmap(self.bigAsteroidPixMap)
                     asteroid.whatSizeAmI = 'BIG';
+                    a = Asteroid(2, 0, 0, 3, 1);
+                    a.isHidden = True;
+                    a1 = Asteroid(2, 0, 0, 3, 1);
+                    a1.isHidden = True;
+                    asteroids.append(a);
+                    asteroids.append(a1);
+                    l = QLabel(self);
+                    l.setPixmap(self.mediumAsteroidPixMap);
+                    l1 = QLabel(self);
+                    l1.setPixmap(self.mediumAsteroidPixMap);
+                    asteroidLabels.append(l);
+                    asteroidLabels.append(l1);
 
                 lab.setGeometry(asteroid.posX,asteroid.posY,100,100);
                 asteroids.append(asteroid)
@@ -518,9 +544,10 @@ class theMainWindow(QMainWindow):
             self.showAsteroids()
 
     def showAsteroids(self):
-        for l in asteroidLabels:
-            if l != 'DESTROYED':
-                l.show()
+        for i in range(len(asteroidLabels)):
+            if asteroidLabels[i] != 'DESTROYED':
+                if(asteroids[i].isHidden == False):
+                    asteroidLabels[i].show()
 
     def showScore(self):
         i = 1;
