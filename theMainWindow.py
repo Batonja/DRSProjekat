@@ -34,13 +34,11 @@ class AsteroidsThread(QThread):
                     if a.direction == 0:
                         a.posX = a.posX + a.speed
                         a.posY = a.posY + a.speed
-
                     else:
                         a.posX = a.posX - a.speed
                         a.posY = a.posY - a.speed
                     a.calculateMyMiddle();
                     a.asignMinAndMaxToAsteroid();
-
 
             self.signal.emit()
 
@@ -65,7 +63,7 @@ class theMainWindow(QMainWindow):
         self.bigAsteroidPixMap = QPixmap('./images/asteroid1.png').scaled(bigAsteroidSize, bigAsteroidSize, Qt.IgnoreAspectRatio)
         self.goldAsteroidPixmap = QPixmap('./images/gold_asteroid.png').scaled(bigAsteroidSize, bigAsteroidSize, Qt.IgnoreAspectRatio)
 
-        self.asteroidCount = 5
+        self.asteroidCount = 1
 
         self.initUI();
 
@@ -172,7 +170,7 @@ class theMainWindow(QMainWindow):
     def setPlayers(self):
         if(self.inputNumbers.text() == '1' or self.inputNumbers.text() == '2' or self.inputNumbers.text() == '3' or self.inputNumbers.text() == '4') or self.tournamentTick.isChecked() == True:
             self.startAsteroids()
-            self.startBonus()
+            #self.startBonus()
 
             if self.tournamentTick.isChecked():
                 self.numberOfPlayers = 4;
@@ -439,7 +437,7 @@ class theMainWindow(QMainWindow):
                 if(spaceShip[num].isDead == False):
                     for point in spaceShip[num].points:
                         for i in range(len(asteroids)):
-                            if (asteroids[i] != 'DESTROYED' and point.x() <= asteroids[i].posMaxX and point.x() >=
+                            if (asteroids[i] != 'DESTROYED' and asteroids[i].isHidden == False and point.x() <= asteroids[i].posMaxX and point.x() >=
                                     asteroids[i].posMinX and point.y() >= asteroids[i].posMinY and point.y() <=
                                     asteroids[i].posMaxY):
                                 spaceShip[num].die();
@@ -475,26 +473,27 @@ class theMainWindow(QMainWindow):
 
         for i in range(len(asteroids)):
             if asteroids[i] != 'DESTROYED':
-                if asteroids[i].posX > self.frameGeometry().height():
-                    asteroids[i].posX = 0
-                elif asteroids[i].posX <= 0:
-                    asteroids[i].posX = 750
-                if asteroids[i].posY > self.frameGeometry().width():
-                    asteroids[i].posY = 0
-                elif asteroids[i].posY <= 0:
-                    asteroids[i].posY = 750
-                asteroidLabels[i].setGeometry(asteroids[i].posX, asteroids[i].posY, 100, 100)
-                asteroidLabels[i].show()
+                if asteroids[i].isHidden == False:
+                    if asteroids[i].posX > self.frameGeometry().height():
+                        asteroids[i].posX = 0
+                    elif asteroids[i].posX <= 0:
+                        asteroids[i].posX = 750
+                    if asteroids[i].posY > self.frameGeometry().width():
+                        asteroids[i].posY = 0
+                    elif asteroids[i].posY <= 0:
+                        asteroids[i].posY = 750
+                    asteroidLabels[i].setGeometry(asteroids[i].posX, asteroids[i].posY, 100, 100)
+                    asteroidLabels[i].show()
 
     def createAsteroids(self):
         if self.aliveAsteroidsCount() == 0:
             self.currentLevel += 1
             self.levelCountLabel.setText('Level: ' + str(self.currentLevel))
 
-            #Na svakom nivou ima 5 vise asteroida
-            self.asteroidCount += 5
+            #Na svakom nivou ima 2 vise asteroida
+            self.asteroidCount += 2
 
-            for a in range(self.asteroidCount):
+            for i in range(self.asteroidCount):
                 randomDirection = randint(0, 1)
                 posX = randrange(1, 750)
                 posY = randrange(1, 750)
@@ -509,9 +508,13 @@ class theMainWindow(QMainWindow):
                 elif size == 2:
                     lab.setPixmap(self.mediumAsteroidPixMap)
                     asteroid.whatSizeAmI = 'MEDIUM';
-                    a = Asteroid(1, 0, 0, 3, 1);
+                    a = Asteroid(1, 1, 1, 3, 0);
+                    a.whatSizeAmI = 'SMALL'
                     a.isHidden = True;
-                    a1 = Asteroid(1, 0, 0, 3, 1);
+                    a.wasHidden = True
+                    a1 = Asteroid(1, 2, 2, 3, 1);
+                    a1.whatSizeAmI = 'SMALL'
+                    a1.wasHidden = True
                     a1.isHidden = True;
                     asteroids.append(a);
                     asteroids.append(a1);
@@ -524,9 +527,13 @@ class theMainWindow(QMainWindow):
                 else:
                     lab.setPixmap(self.bigAsteroidPixMap)
                     asteroid.whatSizeAmI = 'BIG';
-                    a = Asteroid(2, 0, 0, 3, 1);
+                    a = Asteroid(2, 3, 3, 3, 0);
+                    a.whatSizeAmI = 'MEDIUM'
                     a.isHidden = True;
-                    a1 = Asteroid(2, 0, 0, 3, 1);
+                    a.wasHidden = True
+                    a1 = Asteroid(2, 4, 4, 3, 1);
+                    a1.whatSizeAmI = 'MEDIUM'
+                    a1.wasHidden = True
                     a1.isHidden = True;
                     asteroids.append(a);
                     asteroids.append(a1);
@@ -546,7 +553,7 @@ class theMainWindow(QMainWindow):
     def showAsteroids(self):
         for i in range(len(asteroidLabels)):
             if asteroidLabels[i] != 'DESTROYED':
-                if(asteroids[i].isHidden == False):
+                if asteroids[i].isHidden == False:
                     asteroidLabels[i].show()
 
     def showScore(self):
@@ -571,22 +578,51 @@ class theMainWindow(QMainWindow):
             asteroidLabels[asteroidIndex].hide()
             asteroidLabels[asteroidIndex] = 'DESTROYED'
             print('Small asteroid has been destroyed')
-        elif asteroid.size == 2:
-            #self.createSmallAsteroid(asteroid.posX, asteroid.posY, 0, 1);
-            #self.createSmallAsteroid(asteroid.posX, asteroid.posY, 1, 1);
-            asteroids[asteroidIndex] = 'DESTROYED'
-            asteroidLabels[asteroidIndex].hide()
-            asteroidLabels[asteroidIndex] = 'DESTROYED'
-            print('Medium asteroid has been destroyed')
-        else:
-            # kreiraj nove asteroide
-            #self.createSmallAsteroid(asteroid.posX, asteroid.posY, 0, 2);
-            #self.createSmallAsteroid(asteroid.posX, asteroid.posY, 1, 2);
+        elif asteroid.size == 2 and asteroid.wasHidden == False:
+            if asteroids[asteroidIndex - 2] != 'DESTROYED':
+                asteroids[asteroidIndex - 2].isHidden = False
+                asteroids[asteroidIndex - 2].posX = asteroid.posX
+                asteroids[asteroidIndex - 2].posY = asteroid.posY
+            if asteroids[asteroidIndex - 1] != 'DESTROYED':
+                asteroids[asteroidIndex - 1].isHidden = False
+                asteroids[asteroidIndex - 1].posX = asteroid.posX
+                asteroids[asteroidIndex - 1].posY = asteroid.posY
 
             asteroids[asteroidIndex] = 'DESTROYED'
             asteroidLabels[asteroidIndex].hide()
             asteroidLabels[asteroidIndex] = 'DESTROYED'
+            print('Medium asteroid has been destroyed')
+        elif asteroid.size == 2 and asteroid.wasHidden:
+            asteroids[asteroidIndex] = 'DESTROYED'
+            asteroidLabels[asteroidIndex].hide()
+            asteroidLabels[asteroidIndex] = 'DESTROYED'
+            print('Medium asteroid has been destroyed')
+        elif asteroid.size == 3 and asteroid.points != 300 and asteroid.wasHidden:
+            asteroids[asteroidIndex] = 'DESTROYED'
+            asteroidLabels[asteroidIndex].hide()
+            asteroidLabels[asteroidIndex] = 'DESTROYED'
+
+        elif asteroid.size == 3 and asteroid.points != 300 and asteroid.wasHidden == False:
+            if asteroids[asteroidIndex - 2] != 'DESTROYED':
+                asteroids[asteroidIndex - 2].isHidden = False
+                asteroids[asteroidIndex - 2].posX = asteroid.posX
+                asteroids[asteroidIndex - 2].posY = asteroid.posY
+            if asteroids[asteroidIndex - 1] != 'DESTROYED':
+                asteroids[asteroidIndex - 1].isHidden = False
+                asteroids[asteroidIndex - 1].posX = asteroid.posX
+                asteroids[asteroidIndex - 1].posY = asteroid.posY
+
+            asteroids[asteroidIndex] = 'DESTROYED'
+            asteroidLabels[asteroidIndex].hide()
+            asteroidLabels[asteroidIndex] = 'DESTROYED'
+
             print('Big asteroid has been destroyed')
+        elif asteroid.size == 3 and asteroid.points == 300:
+            asteroids[asteroidIndex] = 'DESTROYED'
+            asteroidLabels[asteroidIndex].hide()
+            asteroidLabels[asteroidIndex] = 'DESTROYED'
+
+            print('Gold asteroid has been destroyed')
 
     def createSmallAsteroid(self, x, y, direction, size):
         newAsteroid = Asteroid(size, x, y, 3, direction)
@@ -607,7 +643,8 @@ class theMainWindow(QMainWindow):
         count = 0
         for a in asteroids:
             if a != 'DESTROYED':
-                count += 1
+                if not a.isHidden:
+                    count += 1
         return count
 
     def destoryRandomAsteroid(self):
