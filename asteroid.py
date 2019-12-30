@@ -12,7 +12,8 @@ class Asteroid:
         self.whatSizeAmI = '';
         self.asignMinAndMaxToAsteroid();
         self.speed = speed
-        self.isHidden = False;
+        self.isHidden = False
+        self.wasHidden = False
         self.points = 0
         #0 - UP, 1 - DOWN
         self.direction = direction
