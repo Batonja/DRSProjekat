@@ -3,7 +3,7 @@ from PyQt5.QtGui import QVector2D
 from math import sin,cos,radians;
 from moveRotate import MOVE_ROTATE;
 from tournamentPlayWait import PLAY_WAIT
-
+import time;
 class SpaceShip(QThread):
     def __init__(self,x,y,color):
         super().__init__()
@@ -19,6 +19,7 @@ class SpaceShip(QThread):
         self.tournamentPlaying = PLAY_WAIT.NO;
         self.lives = 3;
         self.color = color;
+        self.justSpawnedTimer = 0;
         self.isDead = False;
         self.colorOfProjectile = Qt.transparent;
         points = [
@@ -32,6 +33,12 @@ class SpaceShip(QThread):
         self.points = points;
         self.projectile = 0;
         self.reloadProjectile();
+    def countDownSpawnedTimer(self):
+        while self.justSpawnedTimer != 0:
+            self.justSpawnedTimer -= 1;
+            time.sleep(1);
+
+
     def reloadProjectile(self):
         self.projectile = QPointF(self.points[0]);
         self.colorOfProjectile = Qt.transparent;

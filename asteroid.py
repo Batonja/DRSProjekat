@@ -15,6 +15,7 @@ class Asteroid:
         self.isHidden = False
         self.wasHidden = False
         self.points = 0
+
         #0 - UP, 1 - DOWN
         self.direction = direction
         if size == 1:

@@ -9,7 +9,10 @@ from tournamentPlayWait import PLAY_WAIT;
 from asteroid import Asteroid
 from random import randrange, randint
 from moveRotate import MOVE_ROTATE;
-from multiprocessing import Pool,Process;
+from multiprocessing import Pool,Process
+import threading
+import queue
+
 
 asteroids = []
 asteroidLabels = []
@@ -383,11 +386,23 @@ class theMainWindow(QMainWindow):
 
             self.repaint();
         if (Qt.Key_NumLock  in theKeys  and spaceShip[0].tournamentPlaying != PLAY_WAIT.WAIT):
-            spaceShip[0] = self.shoot(spaceShip[0])
+            l = RLock();
+            l.acquire();
+            que = queue.Queue();
+            t = Thread(target=self.shoot,args=(spaceShip[0],que))
+            t.start();
+            t.join();
+            l.release();
+            print(que.get())
 
         if (Qt.Key_Space  in theKeys  and int(self.numberOfPlayers) > 1 and spaceShip[
             1].tournamentPlaying != PLAY_WAIT.WAIT):
-            spaceShip[1] = self.shoot(spaceShip[1])
+            que = queue.Queue();
+            t = Thread(target=self.shoot, args=(spaceShip[1], que))
+            t.start();
+            t.join();
+            print(que.get())
+
         if (Qt.Key_Delete  in theKeys  and int(self.numberOfPlayers) > 2 and spaceShip[
             2].tournamentPlaying != PLAY_WAIT.WAIT):
             spaceShip[2] = self.shoot(spaceShip[2])
@@ -398,10 +413,12 @@ class theMainWindow(QMainWindow):
     def keyPressEvent(self, e):
         lock = RLock();
         if self.mode == "PLAYING":
+            lock.acquire();
             theKeys.add(e.key())
             t = Thread(target=self.puppetShow,args=());
             t.start();
             t.join();
+            lock.release();
     def keyReleaseEvent(self, e):
         lock = RLock();
         if(self.mode == "PLAYING"):
@@ -409,7 +426,7 @@ class theMainWindow(QMainWindow):
                 lock.acquire();
                 theKeys.remove(e.key());
                 lock.release();
-    def shoot(self,ship):
+    def shoot(self,ship,queue):
         ship.colorOfProjectile = ship.color;
         ship.projectile = QPointF(ship.points[0]);
         lock = RLock();
@@ -421,14 +438,17 @@ class theMainWindow(QMainWindow):
                     ship.reloadProjectile();
                     self.destroyAsteroid(asteroids[i],ship)
                     self.repaint()
+                    queue.put(ship);
                     return ship;
             self.repaint();
         ship.reloadProjectile()
+        queue.put(ship)
         return ship;
 
 
     def checkIfDead(self):
         found = False;
+        lock = RLock();
         while True:
             time.sleep(0.07)
             for num in range(self.numberOfPlayers):
@@ -439,10 +459,16 @@ class theMainWindow(QMainWindow):
                         for i in range(len(asteroids)):
                             if (asteroids[i] != 'DESTROYED' and asteroids[i].isHidden == False and point.x() <= asteroids[i].posMaxX and point.x() >=
                                     asteroids[i].posMinX and point.y() >= asteroids[i].posMinY and point.y() <=
-                                    asteroids[i].posMaxY):
+                                    asteroids[i].posMaxY and spaceShip[num].justSpawnedTimer == 0):
                                 spaceShip[num].die();
+                                lock.acquire();
                                 self.showAllLives()
                                 self.repaint();
+                                lock.release();
+                                spaceShip[num].justSpawnedTimer = 5;
+                                t = Thread(target=spaceShip[num].countDownSpawnedTimer(),args=())
+                                t.start();
+                                t.join()
                                 print("preziveo repaint");
                                 found = True;
                                 break;
@@ -491,7 +517,7 @@ class theMainWindow(QMainWindow):
             self.levelCountLabel.setText('Level: ' + str(self.currentLevel))
 
             #Na svakom nivou ima 2 vise asteroida
-            self.asteroidCount += 2
+            self.asteroidCount += 20
 
             for i in range(self.asteroidCount):
                 randomDirection = randint(0, 1)
