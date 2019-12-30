@@ -393,22 +393,39 @@ class theMainWindow(QMainWindow):
             t.start();
             t.join();
             l.release();
-            print(que.get())
+
 
         if (Qt.Key_Space  in theKeys  and int(self.numberOfPlayers) > 1 and spaceShip[
             1].tournamentPlaying != PLAY_WAIT.WAIT):
+            l = RLock();
+            l.acquire();
             que = queue.Queue();
             t = Thread(target=self.shoot, args=(spaceShip[1], que))
             t.start();
             t.join();
-            print(que.get())
+            l.release();
+        
 
         if (Qt.Key_Delete  in theKeys  and int(self.numberOfPlayers) > 2 and spaceShip[
             2].tournamentPlaying != PLAY_WAIT.WAIT):
-            spaceShip[2] = self.shoot(spaceShip[2])
+            l = RLock();
+            l.acquire();
+            que = queue.Queue();
+            t = Thread(target=self.shoot, args=(spaceShip[2], que))
+            t.start();
+            t.join();
+            l.release();
+
         if (Qt.Key_Plus  in theKeys  and int(self.numberOfPlayers) > 3 and spaceShip[
             3].tournamentPlaying != PLAY_WAIT.WAIT):
-            spaceShip[3] = self.shoot(spaceShip[3])
+            l = RLock();
+            l.acquire();
+            que = queue.Queue();
+            t = Thread(target=self.shoot, args=(spaceShip[3], que))
+            t.start();
+            t.join();
+            l.release();
+
 
     def keyPressEvent(self, e):
         lock = RLock();
